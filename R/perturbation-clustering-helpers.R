@@ -113,28 +113,32 @@ GetOriginalSimilarity <- function(data, clusRange, clusteringAlgorithm, showProg
     list(origS = origS, groupings = groupings)
 }
 
-GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, clusteringAlgorithm, perturbedFunction, stoppingCriteriaHandler, showProgress = F, ncore) {
+GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clusteringAlgorithm, perturbedFunction, stoppingCriteriaHandler, showProgress = F, ncore) {
     pertS <- list()
     currentIter <- rep(0,max(clusRange)) # this iter will be used for merge connectivity matrix
-    
-    for (clus in clusRange) {
-        pertS[[clus]] <- matrix(0, nrow(data), nrow(data))
-        rownames(pertS[[clus]]) <- rownames(data)
-        colnames(pertS[[clus]]) <- rownames(data)
-    }
     
     jobs <- rep(clusRange, iterMax)
     maxJob = length(jobs)
     
+    seeds = list()
+    
+    for (clus in clusRange) {
+        #pertS[[clus]] <- matrix(0, nrow(data), nrow(data))
+        #rownames(pertS[[clus]]) <- rownames(data)
+        #colnames(pertS[[clus]]) <- rownames(data)
+        pertS[[clus]] <- list()
+        seeds[[clus]] <- round(rnorm(max(iterMax,1000))*10^6)
+    }
+    
     if (showProgress) pb <- txtProgressBar(min = 0, max = maxJob, style = 3)
     
     kProgress = rep(0, max(clusRange))
-    perturbedRets <- list()
+    # perturbedRets <- list()
     
     parCluster <- if (.Platform$OS.type == "unix") makeForkCluster(ncore) else makePSOCKcluster(ncore)
     
     if (.Platform$OS.type != "unix") {
-        clusterExport(parCluster, varlist = c("BuildConnectivityMatrix"), envir = environment())
+        clusterExport(parCluster, varlist = c("BuildConnectivityMatrix", "CalcAUC"), envir = environment())
     }
     
     registerDoParallel(parCluster)
@@ -143,10 +147,6 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, clustering
     while (length(jobs) > 0) {
         jobLength = step*length(clusRange)
         step = 10
-
-        if (jobLength < ncore * step){
-            jobLength = ncore * step
-        }
         
         if (jobLength > length(jobs)){
             jobLength =  length(jobs)
@@ -156,7 +156,7 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, clustering
         count = 1
         for (clus in jobs[1:jobLength]){
             kProgress[clus] = kProgress[clus] + 1
-            currentJobs[[count]] <- list(iter = kProgress[clus], clus = clus, seed = abs(round(rnorm(1)*10^6))) # this iter will be use for get perturbed data from perturbedRets
+            currentJobs[[count]] <- list(iter = kProgress[clus], clus = clus) # this iter will be use for get perturbed data from perturbedRets
             count = count + 1
         }
 
@@ -165,47 +165,60 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, clustering
         }
         else jobs <- c()
         
-        iters = as.numeric(unique(lapply(currentJobs, function(j) j$iter)))
-        minIter = min(iters, kProgress[which(kProgress != -1)])
-        maxIter = max(iters, kProgress)
-        
-        for (i in 1:maxIter){
-            if (i < minIter){
-                perturbedRets[[i]] <- 0
-            }
-            else if (is.null(perturbedRets[i][[1]])){
-                perturbedRets[[i]] <- perturbedFunction(data = data)
-            }
-        }
         job <- NULL
         rets <- foreach(job = currentJobs) %dopar% {
             clus = job$clus
-            set.seed(job$seed)
-            perturbedRet <- perturbedRets[[job$iter]]
+            
+            set.seed(seeds[[clus]][job$iter])
+            perturbedRet <- perturbedFunction(data = data)
+            
             cMatrix <- BuildConnectivityMatrix(data = perturbedRet$data, clus, clusteringAlgorithm)
             connectivityMatrix = perturbedRet$ConnectivityMatrixHandler(connectivityMatrix = cMatrix$matrix, iter = job$iter, k = clus)
 
             list(
                 connectivityMatrix = connectivityMatrix,
                 clus = clus,
-                perturbedRet = perturbedRet
+                perturbedRet = perturbedRet,
+                auc = CalcAUC(origS[[clus]], connectivityMatrix)$area
             )
         }
-        
+        allStop = F
         for(ret in rets){
-            clus = ret$clus
-            
-            currentIter[clus] <- currentIter[clus] + 1
-            pertS[[clus]] <- ret$perturbedRet$MergeConnectivityMatrices(oldMatrix = pertS[[clus]], newMatrix = ret$connectivityMatrix, iter = currentIter[clus], k = clus)
-            
-            stop <- stoppingCriteriaHandler(iter = currentIter[clus], k = clus, pert = pertS[[clus]])
-            if (stop) {
-                if (showProgress) setTxtProgressBar(pb, getTxtProgressBar(pb) + length(jobs[jobs == clus]))
-                jobs <- jobs[jobs != clus]
-                kProgress[clus] <- -1
+            if (kProgress[clus] != -1){
+                clus = ret$clus
+                currentIter[clus] <- currentIter[clus] + 1
+                #pertS[[clus]] <- ret$perturbedRet$MergeConnectivityMatrices(oldMatrix = pertS[[clus]], newMatrix = ret$connectivityMatrix, iter = currentIter[clus], k = clus)
+                pertS[[clus]][[currentIter[clus]]] <- ret$connectivityMatrix
+                
+                stop <- stoppingCriteriaHandler(iter = currentIter[clus], k = clus, auc = ret$auc)
+                if (stop == 2) {
+                    allStop <- T
+                }
+                else if (stop == 1) {
+                    if (showProgress) setTxtProgressBar(pb, getTxtProgressBar(pb) + length(jobs[jobs == clus]))
+                    jobs <- jobs[jobs != clus]
+                    kProgress[clus] <- -1
+                }   
             }
-            
             if (showProgress) setTxtProgressBar(pb, getTxtProgressBar(pb) + 1)
+        }
+        
+        if (allStop) break()
+        
+        countDone <- -1
+        while(countDone != length(which(kProgress[clusRange] == -1))){
+            countDone <- length(which(kProgress[clusRange] == -1))
+            
+            for (clus in clusRange){
+                if (kProgress[clus] != -1){
+                    stop <- stoppingCriteriaHandler(k = clus, type = 1)
+                    if (stop == 1) {
+                        if (showProgress) setTxtProgressBar(pb, getTxtProgressBar(pb) + length(jobs[jobs == clus]))
+                        jobs <- jobs[jobs != clus]
+                        kProgress[clus] <- -1
+                    }  
+                }
+            }
         }
     }
     

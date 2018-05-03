@@ -2,7 +2,7 @@
 #' @description Perform subtyping using one type of high-dimensional data
 #' 
 #' @param data Input matrix or data frame. The rows represent items while the columns represent features.
-#' @param kMax The maximum number of clusters. The algorithm runs from \code{k = 2} to \code{k = kMax}. Default value is \code{10}.
+#' @param kMax The maximum number of clusters. The algorithm runs from \code{k = 2} to \code{k = kMax}. Default value is \code{5}.
 #' @param verbose Boolean value indicating the algorithm to run with or without logging. Default value is \code{TRUE}.
 #' @param ncore Number of cores that the algorithm should use. Default value is \code{2}.
 #' @param clusteringMethod The name of built-in clustering algorithm that PerturbationClustering will use. Currently supported algorithm are \code{kmeans}, \code{pam} and \code{hclust}. Default value is "\code{kmeans}".
@@ -11,7 +11,7 @@
 #' @param perturbMethod The name of built-in perturbation method that PerturbationClustering will use, currently supported methods are \code{noise} and \code{subsampling}. Default value is "\code{noise}".
 #' @param perturbOptions A list of parameter will be passed to the perturbation method in \code{perturbMethod}.
 #' @param perturbFunction The perturbation method function that will be used instead of built-in ones.
-#' @param iterMin The minimum number of iterations. Default value is \code{100}.
+#' @param iterMin The minimum number of iterations. Default value is \code{20}.
 #' @param iterMax The maximum number of iterations. Default value is \code{200}.
 #' @param madMin The minimum of Mean Absolute Deviation of \code{AUC} of Connectivity matrix for each \code{k}. Default value is \code{1e-03}.
 #' @param msdMin The minimum of Mean Square Deviation of \code{AUC} of Connectivity matrix for each \code{k}. Default value is \code{1e-06}.
@@ -23,7 +23,7 @@
 #' PerturbationClustering takes input as a numerical matrix or data frame of items as rows and features as columns.
 #' It uses a clustering algorithm as the based algorithm.
 #' Current built-in algorithms that users can use directly are \code{kmeans}, \code{pam} and \code{hclust}.
-#' The default parameters for built-in \code{kmeans} are \code{nstart = 50 and iter.max = 1000}.
+#' The default parameters for built-in \code{kmeans} are \code{nstart = 20 and iter.max = 1000}.
 #' Users can change the parameters of built-in clustering algorithm by passing the value into \code{clusteringOptions}.
 #' 
 #' PerturbationClustering also allows users to pass their own clustering algorithm instead of using built-in ones by using \code{clusteringFunction} parameter. 
@@ -64,12 +64,12 @@
 #' \item{origS}{A list of original connectivity matrices}
 #' \item{pertS}{A list of perturbed connectivity matrices}
 #' 
-#' @author
-#' Tin Nguyen and Sorin Draghici
 #' 
 #' @references
 #' 
-#' T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+#' 1. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+#' 
+#' 2. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
 #' 
 #' @seealso \code{\link{kmeans}}, \code{\link{pam}}
 #' 
@@ -158,10 +158,10 @@
 #' @import stats utils cluster entropy parallel pbmcapply doParallel
 #' @importFrom foreach foreach %dopar%
 #' @export
-PerturbationClustering <- function(data, kMax = 10, verbose = T, ncore = 2, # Algorithm args
+PerturbationClustering <- function(data, kMax = 5, verbose = T, ncore = 2, # Algorithm args
                                    clusteringMethod = "kmeans", clusteringFunction = NULL, clusteringOptions = NULL, # Based clustering algorithm args
                                    perturbMethod = "noise", perturbFunction = NULL, perturbOptions = NULL, # Perturbed function args
-                                   iterMin = 100, iterMax = 200, madMin = 1e-03, msdMin = 1e-06 # Stopping condition for generating perturbation matrix
+                                   iterMin = 20, iterMax = 200, madMin = 1e-03, msdMin = 1e-06# Stopping condition for generating perturbation matrix
 ) {
     now = Sys.time()
     
@@ -177,25 +177,45 @@ PerturbationClustering <- function(data, kMax = 10, verbose = T, ncore = 2, # Al
     log("Clustering method: ", clusteringAlgorithm$name)
     log("Perturbation method: ", perturbationAlgorithm$name)
 
-    pca <- prcomp(data)
+    seed = round(rnorm(1)*10^6)
+    pca <- prcomp(data, rank. = min(nrow(data), 200))
 
     # get the partitioning from simply clustering the real data, for consecutive k
     log("Building original connectivity matrices")
+    set.seed(seed)
     origPartition <- GetOriginalSimilarity(data = pca$x, clusRange = 2 : kMax, clusteringAlgorithm = clusteringAlgorithm$fun, showProgress = verbose, ncore)
     origS <- origPartition$origS
 
+    listAUC <- list()
+    for (k in 2:kMax){
+        listAUC[k] <- list(c()) 
+    }
     # declare stopping criteria for Perturbed Similarity computing
-    stoppingCriteriaHandler <- DiffDevianceStoppingHandler(kMax = kMax, origS = origS, iterMin = iterMin, madMin = madMin, msdMin = msdMin)
+    stoppingCriteriaHandler <- DiffDevianceStoppingHandler(kMax = kMax, origS = origS, iterMin = iterMin, madMin = madMin, msdMin = msdMin, onExcute = function(k, AUCs){
+        listAUC[[k]] <<- AUCs
+    })
 
     log("Building perturbed connectivity matrices")
-    pertS <- GetPerturbedSimilarity(data = pca$x, clusRange = 2 : kMax, iterMax = iterMax, iterMin = iterMin,
+    set.seed(seed)
+    pertS <- GetPerturbedSimilarity(data = pca$x, clusRange = 2 : kMax, iterMax = iterMax, iterMin = iterMin, origS = origS,
                                     clusteringAlgorithm = clusteringAlgorithm$fun, perturbedFunction = perturbationAlgorithm$fun,
                                     stoppingCriteriaHandler = stoppingCriteriaHandler,
                                     showProgress = verbose, ncore = ncore)
+    
+    for (k in 2:kMax){
+        AUCs <- listAUC[[k]]
+        pert <- matrix(0, nrow(data), nrow(data))
+        for (i in 1:length(AUCs)){
+            pert <- pert + pertS[[k]][[i]]*length(which(AUCs == AUCs[i]))
+        }
+        pertS[[k]] <- pert/sum(as.matrix(table(AUCs))[,1]^2)
+    }
 
     # get discrepancy message('Calculate discrepancy between original and perturbed connectivity matrices')
     Discrepancy <- CalcPerturbedDiscrepancy(origS, pertS, clusRange = 2 : kMax)
-    clus <- min(which((abs(Discrepancy$AUC - max(Discrepancy$AUC[2 : kMax])) < madMin) == T))
+    
+    Discrepancy$AUC = round(Discrepancy$AUC, digits = 4)#meanAUCs
+    clus <- min(which(Discrepancy$AUC == max(Discrepancy$AUC[2:kMax])))
     
     timediff = Sys.time() - now;
     log("Done in ", timediff, " ", units(timediff), ".\n")

@@ -7,7 +7,7 @@ Perturbation Clustering for data INtegration and disease Subtyping
 }
 
 \description{
-This package implements clustering algorithms proposed by Nguyen, et al (2017). Perturbation Clustering for data INtegration and disease Subtyping (PINS) is an approach for integraton of data and classification of diseases into various subtypes. PINS+ provides algorithms supporting both single data type clustering and multi-omics data type.
+This package implements clustering algorithms proposed by Nguyen, et al (2017). Perturbation Clustering for data INtegration and disease Subtyping (PINS) is an approach for integraton of data and classification of diseases into various subtypes. PINS+ provides algorithms supporting both single data type clustering and multi-omics data type. PINSPlus is an extended version of PINS by allowing users to customize the based clustering algorithm and perturbation methods. Furthermore, PINSPlus fastens PINS by supporting parallel processing and introducing efficient stopping criteria.
 }
 
 \details{

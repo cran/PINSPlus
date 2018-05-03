@@ -4,16 +4,16 @@
 \alias{PerturbationClustering}
 \title{Perturbation clustering}
 \usage{
-PerturbationClustering(data, kMax = 10, verbose = T, ncore = 2,
+PerturbationClustering(data, kMax = 5, verbose = T, ncore = 2,
   clusteringMethod = "kmeans", clusteringFunction = NULL,
   clusteringOptions = NULL, perturbMethod = "noise",
-  perturbFunction = NULL, perturbOptions = NULL, iterMin = 100,
+  perturbFunction = NULL, perturbOptions = NULL, iterMin = 20,
   iterMax = 200, madMin = 0.001, msdMin = 1e-06)
 }
 \arguments{
 \item{data}{Input matrix or data frame. The rows represent items while the columns represent features.}
 
-\item{kMax}{The maximum number of clusters. The algorithm runs from \code{k = 2} to \code{k = kMax}. Default value is \code{10}.}
+\item{kMax}{The maximum number of clusters. The algorithm runs from \code{k = 2} to \code{k = kMax}. Default value is \code{5}.}
 
 \item{verbose}{Boolean value indicating the algorithm to run with or without logging. Default value is \code{TRUE}.}
 
@@ -31,7 +31,7 @@ PerturbationClustering(data, kMax = 10, verbose = T, ncore = 2,
 
 \item{perturbOptions}{A list of parameter will be passed to the perturbation method in \code{perturbMethod}.}
 
-\item{iterMin}{The minimum number of iterations. Default value is \code{100}.}
+\item{iterMin}{The minimum number of iterations. Default value is \code{20}.}
 
 \item{iterMax}{The maximum number of iterations. Default value is \code{200}.}
 
@@ -56,7 +56,7 @@ It aims to determine the optimum cluster number and location of each sample in t
 PerturbationClustering takes input as a numerical matrix or data frame of items as rows and features as columns.
 It uses a clustering algorithm as the based algorithm.
 Current built-in algorithms that users can use directly are \code{kmeans}, \code{pam} and \code{hclust}.
-The default parameters for built-in \code{kmeans} are \code{nstart = 50 and iter.max = 1000}.
+The default parameters for built-in \code{kmeans} are \code{nstart = 20 and iter.max = 1000}.
 Users can change the parameters of built-in clustering algorithm by passing the value into \code{clusteringOptions}.
 
 PerturbationClustering also allows users to pass their own clustering algorithm instead of using built-in ones by using \code{clusteringFunction} parameter. 
@@ -174,11 +174,10 @@ result <- PerturbationClustering(data = AML2004$Gene, perturbFunction = function
 }
 }
 \references{
-T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+1. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+
+2. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
 }
 \seealso{
 \code{\link{kmeans}}, \code{\link{pam}}
-}
-\author{
-Tin Nguyen and Sorin Draghici
 }

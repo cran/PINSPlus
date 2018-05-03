@@ -4,13 +4,13 @@
 \alias{SubtypingOmicsData}
 \title{Subtyping multi-omics data}
 \usage{
-SubtypingOmicsData(dataList, kMax = 10, agreementCutoff = 0.5,
-  verbose = T, ...)
+SubtypingOmicsData(dataList, kMax = 5, agreementCutoff = 0.5, verbose = T,
+  ...)
 }
 \arguments{
 \item{dataList}{a list of data matrices or data frames. Each matrix represents a data type where the rows are items and the columns are features. The matrices must have the same set of items.}
 
-\item{kMax}{the maximum number of clusters. Default value is \code{10}.}
+\item{kMax}{the maximum number of clusters. Default value is \code{5}.}
 
 \item{agreementCutoff}{agreement threshold to be considered consistent. Default value is \code{0.5}.}
 
@@ -95,11 +95,10 @@ legend(
 }
 }
 \references{
-T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+1. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+
+2. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
 }
 \seealso{
 \code{\link{PerturbationClustering}}
-}
-\author{
-Tin Nguyen and Sorin Draghici
 }

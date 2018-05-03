@@ -1,5 +1,5 @@
 ---
-title: "PINS+: A package for data integration and disease subtyping"
+title: "PINSPlus: Clustering Algorithm for Data Integration and Disease Subtyping"
 
 author: |
   | Hung Nguyen, Sangam Shrestha, and Tin Nguyen$^*$
@@ -94,7 +94,7 @@ or
 result <- PerturbationClustering(data = AML2004$Gene, kMax = 10, 
                                  clusteringMethod = "hclust")
 ```
-By default, `kmeans` clustering runs with parameters `nstart = 50` and `iter.max = 1000`. Users can pass new values to `clusteringOptions` to change these values:
+By default, `kmeans` clustering runs with parameters `nstart = 20` and `iter.max = 1000`. Users can pass new values to `clusteringOptions` to change these values:
 ```{r,eval=FALSE}
 result <- PerturbationClustering(
     data = AML2004$Gene, 
