@@ -150,9 +150,6 @@ result <- PerturbationClustering(data = AML2004$Gene, perturbFunction = function
         data = data + epsilon,
         ConnectivityMatrixHandler = function(connectivityMatrix, iter, k) {
             connectivityMatrix
-        },
-        MergeConnectivityMatrices = function(oldMatrix, newMatrix, iter, k){
-            return((oldMatrix*(iter-1) + newMatrix)/iter)
         }
     )
 }) 
@@ -161,7 +158,6 @@ The one argument `perturbFunction` takes is `data` - the original input matrix. 
 
 - `data`: a matrix after perturbating from input `data` and is ready for clustering.
 - `ConnectivityMatrixHandler`: a function that takes three arguments: i) `connectivityMatrix` - the connectivity matrix generated after clustering, ii) `iter` - the current iteration, and iii) `k` - the number of clusters. This function must return a compatible connectivity matrix with the original connectivity matrix. It aims to correct the `connectivityMatrix` if needed and returns its corrected version.
-- `MergeConnectivityMatrices`: a function that takes four arguments: i) `oldMatrix`, ii) `newMatrix`, iii) `k`, and iv) `iter`. `oldMatrix` and `newMatrix` are two connectivity matrices that need to be merged. `k` is the cluster number. `iter` is the current number of iterations. This function must return a connectivity matrix that is merged from `oldMatrix` and `newMatrix`.
 
 `PerturbationClustering` provides several arguments to control stopping criterias:
 

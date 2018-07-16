@@ -115,7 +115,7 @@ GetOriginalSimilarity <- function(data, clusRange, clusteringAlgorithm, showProg
 
 GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clusteringAlgorithm, perturbedFunction, stoppingCriteriaHandler, showProgress = F, ncore) {
     pertS <- list()
-    currentIter <- rep(0,max(clusRange)) # this iter will be used for merge connectivity matrix
+    currentIter <- rep(0,max(clusRange))
     
     jobs <- rep(clusRange, iterMax)
     maxJob = length(jobs)
@@ -123,9 +123,6 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clu
     seeds = list()
     
     for (clus in clusRange) {
-        #pertS[[clus]] <- matrix(0, nrow(data), nrow(data))
-        #rownames(pertS[[clus]]) <- rownames(data)
-        #colnames(pertS[[clus]]) <- rownames(data)
         pertS[[clus]] <- list()
         seeds[[clus]] <- round(rnorm(max(iterMax,1000))*10^6)
     }
@@ -133,7 +130,6 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clu
     if (showProgress) pb <- txtProgressBar(min = 0, max = maxJob, style = 3)
     
     kProgress = rep(0, max(clusRange))
-    # perturbedRets <- list()
     
     parCluster <- if (.Platform$OS.type == "unix") makeForkCluster(ncore) else makePSOCKcluster(ncore)
     
@@ -156,7 +152,7 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clu
         count = 1
         for (clus in jobs[1:jobLength]){
             kProgress[clus] = kProgress[clus] + 1
-            currentJobs[[count]] <- list(iter = kProgress[clus], clus = clus) # this iter will be use for get perturbed data from perturbedRets
+            currentJobs[[count]] <- list(iter = kProgress[clus], clus = clus)
             count = count + 1
         }
 
@@ -187,7 +183,6 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clu
             if (kProgress[clus] != -1){
                 clus = ret$clus
                 currentIter[clus] <- currentIter[clus] + 1
-                #pertS[[clus]] <- ret$perturbedRet$MergeConnectivityMatrices(oldMatrix = pertS[[clus]], newMatrix = ret$connectivityMatrix, iter = currentIter[clus], k = clus)
                 pertS[[clus]][[currentIter[clus]]] <- ret$connectivityMatrix
                 
                 stop <- stoppingCriteriaHandler(iter = currentIter[clus], k = clus, auc = ret$auc)

@@ -26,9 +26,6 @@ AddNoisePerturb <- function(data, noise) {
         data = data + epsilon,
         ConnectivityMatrixHandler = function(connectivityMatrix, ...) {
             connectivityMatrix
-        },
-        MergeConnectivityMatrices = function(oldMatrix, newMatrix, iter, ...){
-            return((oldMatrix*(iter-1) + newMatrix)/iter)
         }
     )
 }
@@ -48,11 +45,6 @@ SubSampling <- function(data, percent = 80) {
                 S[N,N] = 1
             }
             S[randOrder, randOrder]
-        },
-        MergeConnectivityMatrices = function(oldMatrix, newMatrix, iter, ...){
-            rand = randOrder[1:randCount]
-            oldMatrix[rand,rand] <- oldMatrix[rand,rand]*(iter-1)/iter
-            oldMatrix + newMatrix/iter
         }
     )
 }

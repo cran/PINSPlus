@@ -79,9 +79,6 @@ legend("bottomleft", legend = names(condition), pch = condition)
 #          data = data + epsilon,
 #          ConnectivityMatrixHandler = function(connectivityMatrix, iter, k) {
 #              connectivityMatrix
-#          },
-#          MergeConnectivityMatrices = function(oldMatrix, newMatrix, iter, k){
-#              return((oldMatrix*(iter-1) + newMatrix)/iter)
 #          }
 #      )
 #  })

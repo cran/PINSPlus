@@ -102,7 +102,7 @@ SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, verbo
     
     seed = round(rnorm(1)*10^6)
     
-    runPerturbationClustering <- function(dataList, kMax, stage = 1){
+    runPerturbationClustering <- function(dataList, kMax, stage = 1, forceSplit = FALSE){
         dataTypeResult <- lapply(dataList, function(data) {
             set.seed(seed)
             PerturbationClustering(data, kMax, verbose = verbose,...)
@@ -118,7 +118,7 @@ SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, verbo
         
         mlog("STAGE : ", stage, "\t Agreement : ", agreement)
         
-        if (agreement >= agreementCutoff){
+        if (agreement >= agreementCutoff | forceSplit){
             hcW <- hclust(dist(PW))
             maxK = min(kMax*2, dim(unique(PW, MARGIN = 2))[2] - (stage - 1))
             maxHeight = FindMaxHeight(hcW, maxK = min(2*maxK, 10))
@@ -177,7 +177,7 @@ SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, verbo
                 #this is just to make sure we don't split a group that is already very small
                 if (length(miniGroup) > 30) {
                     #this is to check if the data types in this group can be split
-                    groupsM <- runPerturbationClustering(dataList = lapply(dataList, function(d) d[miniGroup, ]), kMax = min(kMax, 5), stage = 2)$groups
+                    groupsM <- runPerturbationClustering(dataList = lapply(dataList, function(d) d[miniGroup, ]), kMax = min(kMax, 5), stage = 2, forceSplit = T)$groups
                     if (!is.null(groupsM))
                         groups2[miniGroup] <- paste(g, groupsM, sep = "-")
                 }
