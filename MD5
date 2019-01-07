@@ -1,8 +1,8 @@
-dbd4109b10740ac8aa88f5681a1dd2f9 *DESCRIPTION
+610391074c6ea125b4eef6400b9c7e5a *DESCRIPTION
 34b855d1a77c31f318b56aed03e0f52e *NAMESPACE
 faf58e6fa34b772d3dd673fd3011e054 *R/clustering-algorithm-wrappers.R
 559c362933a38289395085ef14f7103d *R/perturb-functions.R
-1be0d6f070513b9f17ba2d937411d423 *R/perturbation-clustering-helpers.R
+4413fc79f4e3f6c5fa037db5319e3af8 *R/perturbation-clustering-helpers.R
 a376cd75910a28e8d2875a30592d5924 *R/perturbation-clustering.R
 5771364b2f9d83eaca2ae3b0af90d6a4 *R/stopping-criteria-handlers.R
 f9e57f1c71b3d3468ff3dc5eed277ff0 *R/subtyping-omics-data-helpers.R
@@ -11,9 +11,10 @@ bdb393d3a64a4973d26a412cfb9a54bd *build/vignette.rds
 f89d8e79ea056f7d472f6c73a39526b2 *data/AML2004.rda
 e267166b30728adf382ad424bdca88fe *data/KIRC.rda
 cf0d52cafd35cb50a12b46deb24b14df *data/datalist
+6abc276c62a987eccd41cc6b71c1d370 *inst/CITATION
 ef55efdc61e997773e386be49d8131c2 *inst/doc/PINSPlus.R
 d402352bfbbf361b890379559cd77180 *inst/doc/PINSPlus.Rmd
-5fe9bcf952ed70b9d45709669fd73437 *inst/doc/PINSPlus.pdf
+fad71d78e53406134849239b96e4303c *inst/doc/PINSPlus.pdf
 fa2088dbe2c3e96ec4388fad3332deae *man/AML2004.Rd
 abda0292cd37990dac2b7a8af9b58d78 *man/KIRC.Rd
 1af1561b62cfc6d83657cd994f0cf490 *man/PINSPlus-package.Rd
@@ -22,5 +23,5 @@ efbb12b79b3c90e4edba7d65259c9454 *man/SubtypingOmicsData.Rd
 5b7a358424264d63ea1b82788972cb7e *vignettes/KIRC.png
 d402352bfbbf361b890379559cd77180 *vignettes/PINSPlus.Rmd
 d4887bb760f6d50e4df8c5de08a31fe0 *vignettes/PINSPlus.bib
-16526e063490dc21ddbe41d271597a73 *vignettes/PINSPlus.html
+9cd6568ce8640e684968764e76fd2fd1 *vignettes/PINSPlus.html
 4e22ca2ed470aa88767c462d03295890 *vignettes/ieee.csl

@@ -19,7 +19,7 @@ GetClusteringAlgorithm <- function(clusteringMethod = "kmeans", clusteringFuncti
         )
     }
     else {
-        name = "Unknow"
+        name = "Unknown"
     }
     
     list(
@@ -56,7 +56,7 @@ GetPerturbationAlgorithm <- function(data = data, perturbMethod = "noise", pertu
         )
     }
     else {
-        name = "Unknow"
+        name = "Unknown"
     }
     
     list(
