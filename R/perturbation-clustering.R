@@ -11,6 +11,7 @@
 #' @param perturbMethod The name of built-in perturbation method that PerturbationClustering will use, currently supported methods are \code{noise} and \code{subsampling}. Default value is "\code{noise}".
 #' @param perturbOptions A list of parameter will be passed to the perturbation method in \code{perturbMethod}.
 #' @param perturbFunction The perturbation method function that will be used instead of built-in ones.
+#' @param PCAFunction The function to reduce dimension of input \code{data} before clustering. By default \code{prcomp} will be used with \code{rank.=min(nrow(data), 200)}. If declared, this function receives \code{data} as the parameter and must return a numeric matrix.
 #' @param iterMin The minimum number of iterations. Default value is \code{20}.
 #' @param iterMax The maximum number of iterations. Default value is \code{200}.
 #' @param madMin The minimum of Mean Absolute Deviation of \code{AUC} of Connectivity matrix for each \code{k}. Default value is \code{1e-03}.
@@ -161,6 +162,7 @@
 PerturbationClustering <- function(data, kMax = 5, verbose = T, ncore = 2, # Algorithm args
                                    clusteringMethod = "kmeans", clusteringFunction = NULL, clusteringOptions = NULL, # Based clustering algorithm args
                                    perturbMethod = "noise", perturbFunction = NULL, perturbOptions = NULL, # Perturbed function args
+                                   PCAFunction = NULL,
                                    iterMin = 20, iterMax = 200, madMin = 1e-03, msdMin = 1e-06# Stopping condition for generating perturbation matrix
 ) {
     now = Sys.time()
@@ -178,7 +180,20 @@ PerturbationClustering <- function(data, kMax = 5, verbose = T, ncore = 2, # Alg
     log("Perturbation method: ", perturbationAlgorithm$name)
 
     seed = round(rnorm(1)*10^6)
-    pca <- prcomp(data, rank. = min(nrow(data), 200))
+    
+    if (is.null(PCAFunction)){
+        pca <- prcomp(data, rank. = min(nrow(data), 200))
+    }
+    else {
+        pca <- list(
+            x = PCAFunction(data)
+        )
+    }
+    
+    rowNum = nrow(data);
+    
+    rm(data);
+    gc();
 
     # get the partitioning from simply clustering the real data, for consecutive k
     log("Building original connectivity matrices")
@@ -202,19 +217,27 @@ PerturbationClustering <- function(data, kMax = 5, verbose = T, ncore = 2, # Alg
                                     stoppingCriteriaHandler = stoppingCriteriaHandler,
                                     showProgress = verbose, ncore = ncore)
     
+    # AUCs <- list()
     for (k in 2:kMax){
-        AUCs <- listAUC[[k]]
-        pert <- matrix(0, nrow(data), nrow(data))
-        for (i in 1:length(AUCs)){
-            pert <- pert + pertS[[k]][[i]]*length(which(AUCs == AUCs[i]))
-        }
-        pertS[[k]] <- pert/sum(as.matrix(table(AUCs))[,1]^2)
+        # AUCs <- listAUC[[k]]
+        pertS[[k]] <- Reduce('+', lapply(pertS[[k]], function(p) p$connectivityMatrix * (p$count^2)))/sum(as.matrix(table(listAUC[[k]]))[,1]^2)
+        # uniqueAUC <- unique(listAUC[[k]]);
+        # AUC <- lapply(uniqueAUC, function(auc) auc*(length(which(listAUC[[k]] == auc))^2))
+        # AUCs[[k]] <- sum(unlist(AUC))/sum(as.matrix(table(listAUC[[k]]))[,1]^2)
+        
+        # pert <- matrix(0, rowNum, rowNum)
+        # 
+        # for (i in 1:length(AUCs)){
+        #     pert <- pert + pertS[[k]][[i]]*length(which(AUCs == AUCs[i]))
+        # }
+        # pertS[[k]] <- pert/sum(as.matrix(table(AUCs))[,1]^2)
     }
 
     # get discrepancy message('Calculate discrepancy between original and perturbed connectivity matrices')
     Discrepancy <- CalcPerturbedDiscrepancy(origS, pertS, clusRange = 2 : kMax)
     
-    Discrepancy$AUC = round(Discrepancy$AUC, digits = 4)#meanAUCs
+    # Discrepancy$AUC = round(Discrepancy$AUC, digits = 4)#meanAUCs
+    Discrepancy$AUC = round(Discrepancy$AUC, digits = 3) #meanAUCs
     clus <- min(which(Discrepancy$AUC == max(Discrepancy$AUC[2:kMax])))
     
     timediff = Sys.time() - now;

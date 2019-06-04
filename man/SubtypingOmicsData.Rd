@@ -4,8 +4,8 @@
 \alias{SubtypingOmicsData}
 \title{Subtyping multi-omics data}
 \usage{
-SubtypingOmicsData(dataList, kMax = 5, agreementCutoff = 0.5, verbose = T,
-  ...)
+SubtypingOmicsData(dataList, kMax = 5, agreementCutoff = 0.5,
+  verbose = T, ...)
 }
 \arguments{
 \item{dataList}{a list of data matrices or data frames. Each matrix represents a data type where the rows are items and the columns are features. The matrices must have the same set of items.}

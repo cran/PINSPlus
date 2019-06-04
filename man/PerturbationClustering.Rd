@@ -7,8 +7,8 @@
 PerturbationClustering(data, kMax = 5, verbose = T, ncore = 2,
   clusteringMethod = "kmeans", clusteringFunction = NULL,
   clusteringOptions = NULL, perturbMethod = "noise",
-  perturbFunction = NULL, perturbOptions = NULL, iterMin = 20,
-  iterMax = 200, madMin = 0.001, msdMin = 1e-06)
+  perturbFunction = NULL, perturbOptions = NULL, PCAFunction = NULL,
+  iterMin = 20, iterMax = 200, madMin = 0.001, msdMin = 1e-06)
 }
 \arguments{
 \item{data}{Input matrix or data frame. The rows represent items while the columns represent features.}
@@ -30,6 +30,8 @@ PerturbationClustering(data, kMax = 5, verbose = T, ncore = 2,
 \item{perturbFunction}{The perturbation method function that will be used instead of built-in ones.}
 
 \item{perturbOptions}{A list of parameter will be passed to the perturbation method in \code{perturbMethod}.}
+
+\item{PCAFunction}{The function to reduce dimension of input \code{data} before clustering. By default \code{prcomp} will be used with \code{rank.=min(nrow(data), 200)}. If declared, this function receives \code{data} as the parameter and must return a numeric matrix.}
 
 \item{iterMin}{The minimum number of iterations. Default value is \code{20}.}
 

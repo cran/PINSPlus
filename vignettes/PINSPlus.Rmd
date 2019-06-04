@@ -94,6 +94,7 @@ or
 result <- PerturbationClustering(data = AML2004$Gene, kMax = 10, 
                                  clusteringMethod = "hclust")
 ```
+
 By default, `kmeans` clustering runs with parameters `nstart = 20` and `iter.max = 1000`. Users can pass new values to `clusteringOptions` to change these values:
 ```{r,eval=FALSE}
 result <- PerturbationClustering(
