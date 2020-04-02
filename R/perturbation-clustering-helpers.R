@@ -19,7 +19,7 @@ GetClusteringAlgorithm <- function(clusteringMethod = "kmeans", clusteringFuncti
         )
     }
     else {
-        name = "Unknown"
+        name = "Unknow"
     }
     
     list(
@@ -56,10 +56,8 @@ GetPerturbationAlgorithm <- function(data = data, perturbMethod = "noise", pertu
         )
     }
     else {
-        name = "Unknown"
+        name = "Unknow"
     }
-    
-    rm(data)
     
     list(
         fun = function(data) do.call(perturbFunction, c(list(data = data), perturbOptions)),
@@ -69,13 +67,12 @@ GetPerturbationAlgorithm <- function(data = data, perturbMethod = "noise", pertu
 
 BuildConnectivityMatrix <- function(data, clus, clusteringAlgorithm) {
     rowNum <- nrow(data)
-    S <- matrix(0, rowNum, rowNum)
+    S <- matrix(0L, rowNum, rowNum)
     cluster <- clusteringAlgorithm(data, clus)
     
     for (j in 1:clus) {
-        X <- rep(0, rowNum)
-        X[which(cluster == j)] <- 1
-        S <- S + X %*% t(X)
+        idx <- cluster == j
+        S[idx, idx] <- 1L
     }
     
     rownames(S) <- rownames(data)
@@ -84,37 +81,30 @@ BuildConnectivityMatrix <- function(data, clus, clusteringAlgorithm) {
     list(matrix = S, groups = cluster)
 }
 
+ClusterToConnectivity <- function(cluster){
+    S <- matrix(0L, length(cluster), length(cluster))
+    for (j in 1:max(cluster)) {
+        idx <- cluster == j
+        S[idx, idx] <- 1L
+    }
+    S
+}
+
 GetOriginalSimilarity <- function(data, clusRange, clusteringAlgorithm, showProgress = F, ncore) {
-    # data <- prcomp(data)$x
     groupings <- list()
     origS <- list()
     
-    .ncore = if (.Platform$OS.type == "unix") ncore else 1
+    pb <- txtProgressBar(min = 0, max = length(clusRange), style = 3)
     
     seeds = abs(round(rnorm(max(clusRange))*10^6))
-    # params = list(
-    #     X = clusRange,  
-    #     mc.cores = if (length(clusRange) > .ncore) .ncore else length(clusRange),  
-    #     FUN = function(clus) {
-    #         set.seed(seeds[clus])
-    #         list(cMatrix = BuildConnectivityMatrix(data, clus, clusteringAlgorithm),clus = clus)
-    #     }
-    # )
     
-    # if(showProgress) {
-    #     params$mc.style = if(showProgress) "txt" else NULL
-    # }
     
-    # rets <- do.call((if(showProgress) pbmclapply else mclapply), params)
-    
-    rets <- mclapply(X = clusRange, mc.cores = .ncore, FUN = function(clus) {
+    for (clus in clusRange){
         set.seed(seeds[clus])
-        list(cMatrix = BuildConnectivityMatrix(data, clus, clusteringAlgorithm),clus = clus)
-    })
-    
-    for(ret in rets){
-        origS[[ret$clus]] <- ret$cMatrix$matrix
-        groupings[[ret$clus]] <- ret$cMatrix$group
+        groupings[[clus]] <- clusteringAlgorithm(data, clus)
+        origS[[clus]] <- ClusterToConnectivity(groupings[[clus]])
+        rownames(origS[[clus]]) <- colnames(origS[[clus]]) <- rownames(data)
+        setTxtProgressBar(pb, clus)
     }
     
     list(origS = origS, groupings = groupings)
@@ -123,36 +113,26 @@ GetOriginalSimilarity <- function(data, clusRange, clusteringAlgorithm, showProg
 GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clusteringAlgorithm, perturbedFunction, stoppingCriteriaHandler, showProgress = F, ncore) {
     pertS <- list()
     currentIter <- rep(0,max(clusRange))
-    
+
     jobs <- rep(clusRange, iterMax)
     maxJob = length(jobs)
-    
+
     seeds = list()
-    
+
     for (clus in clusRange) {
         pertS[[clus]] <- list()
         seeds[[clus]] <- round(rnorm(max(iterMax,1000))*10^6)
     }
-    
+
     if (showProgress) pb <- txtProgressBar(min = 0, max = maxJob, style = 3)
-    
+
     kProgress = rep(0, max(clusRange))
-    
-    parCluster <- makePSOCKcluster(ncore);
-    # parCluster <- if (.Platform$OS.type == "unix") makeForkCluster(ncore) else makePSOCKcluster(ncore)
-    
-    # if (.Platform$OS.type != "unix") {
-        clusterExport(parCluster, varlist = c("BuildConnectivityMatrix", "CalcAUC", "AddNoisePerturb"), envir = environment())
-    # }
-    
-    registerDoParallel(parCluster)
-    
     step = iterMin
+    if(.Platform$OS.type == "unix") doParallel::registerDoParallel(min(ncore, step))
     while (length(jobs) > 0) {
-       
         jobLength = step*length(clusRange)
         step = 10
-        
+
         if (jobLength > length(jobs)){
             jobLength =  length(jobs)
         }
@@ -169,40 +149,51 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clu
             jobs <- jobs[(jobLength+1):length(jobs)]
         }
         else jobs <- c()
-        
+
         job <- NULL
-        rets <- foreach(job = currentJobs) %dopar% {
-            clus = job$clus
-
-            set.seed(seeds[[clus]][job$iter])
-            perturbedRet <- perturbedFunction(data = data)
-
-            cMatrix <- BuildConnectivityMatrix(data = perturbedRet$data, clus, clusteringAlgorithm)
-            connectivityMatrix = perturbedRet$ConnectivityMatrixHandler(connectivityMatrix = cMatrix$matrix, iter = job$iter, k = clus)
-
-            list(
-                connectivityMatrix = connectivityMatrix,
-                clus = clus,
-                # perturbedRet = perturbedRet,
-                auc = CalcAUC(origS[[clus]], connectivityMatrix)$area
-            )
+        
+        if(.Platform$OS.type == "unix") 
+        {
+            rets <- foreach(job = currentJobs) %dopar% {
+                clus = job$clus
+                
+                set.seed(seeds[[clus]][job$iter])
+                perturbedRet <- perturbedFunction(data = data)
+                
+                cMatrix <- BuildConnectivityMatrix(data = perturbedRet$data, clus, clusteringAlgorithm)
+                connectivityMatrix = perturbedRet$ConnectivityMatrixHandler(connectivityMatrix = cMatrix$matrix, iter = job$iter, k = clus)
+                
+                list(
+                    connectivityMatrix = connectivityMatrix,
+                    clus = clus,
+                    auc = CalcAUC(origS[[clus]], connectivityMatrix)$area
+                )
+            }
+        } else {
+            rets <- foreach(job = currentJobs) %do% {
+                clus = job$clus
+                
+                set.seed(seeds[[clus]][job$iter])
+                perturbedRet <- perturbedFunction(data = data)
+                
+                cMatrix <- BuildConnectivityMatrix(data = perturbedRet$data, clus, clusteringAlgorithm)
+                connectivityMatrix = perturbedRet$ConnectivityMatrixHandler(connectivityMatrix = cMatrix$matrix, iter = job$iter, k = clus)
+                
+                list(
+                    connectivityMatrix = connectivityMatrix,
+                    clus = clus,
+                    auc = CalcAUC(origS[[clus]], connectivityMatrix)$area
+                )
+            }
         }
+        
         
         allStop = F
         for(ret in rets){
             if (kProgress[clus] != -1){
                 clus = ret$clus
                 currentIter[clus] <- currentIter[clus] + 1
-                # pertS[[clus]][[currentIter[clus]]] <- ret$connectivityMatrix
-                
-                if (is.null(pertS[[clus]][[paste(ret$auc)]])){
-                    pertS[[clus]][[paste(ret$auc)]] = list(
-                        count = 0,
-                        connectivityMatrix = ret$connectivityMatrix
-                    )
-                }
-                
-                pertS[[clus]][[paste(ret$auc)]]$count = pertS[[clus]][[paste(ret$auc)]]$count + 1;
+                pertS[[clus]][[currentIter[clus]]] <- ret$connectivityMatrix
                 
                 stop <- stoppingCriteriaHandler(iter = currentIter[clus], k = clus, auc = ret$auc)
                 if (stop == 2) {
@@ -216,9 +207,8 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clu
             }
             if (showProgress) setTxtProgressBar(pb, getTxtProgressBar(pb) + 1)
         }
-        
         if (allStop) break()
-        
+
         countDone <- -1
         while(countDone != length(which(kProgress[clusRange] == -1))){
             countDone <- length(which(kProgress[clusRange] == -1))
@@ -235,14 +225,15 @@ GetPerturbedSimilarity <- function(data, clusRange, iterMax, iterMin, origS, clu
             }
         }
     }
-    
+    if(.Platform$OS.type == "unix") doParallel::stopImplicitCluster()
+
     if (showProgress) {
         setTxtProgressBar(pb, maxJob)
         cat("\n")
     }
-    
-    stopCluster(parCluster)
-    
+
+   
+
     pertS
 }
 
@@ -251,7 +242,8 @@ CalcAUC <- function(orig, pert) {
     S <- abs(orig - pert)
     diag(S) <- 0
     # added -10^(-5) for visual purposes
-    A <- c(-10^(-5), sort(unique(as.numeric(S))))
+    # A <- c(-10^(-5), sort(unique(as.numeric(S))))
+    A <- c(-10^(-5), 0, sort(unique(as.numeric(S[S!=0]))))
     if (max(A) < 1)
         A <- c(A, 1)
     B <- NULL

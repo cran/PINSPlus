@@ -1,10 +1,10 @@
 GetNoise <- function(data, noisePercent = "median") {
     if (is.null(noisePercent)) noisePercent = "median"
     if (noisePercent == "median") {
-        sds <- apply(data, 2, sd)
+        sds <- matrixStats::colSds(data) # Vectorize the calulation of column mean
         noise <- median(sds)
     } else {
-        sds <- apply(data, 2, sd)
+        sds <- matrixStats::colSds(data)
         sds <- sort(sds)
         ind <- round(length(sds) * noisePercent/100)
         noise <- sds[ind]
@@ -15,13 +15,18 @@ GetNoise <- function(data, noisePercent = "median") {
 AddNoisePerturb <- function(data, noise) {
     rowNum <- nrow(data)
     colNum <- ncol(data)
-    epsilon <-
-        matrix(
-            data = rnorm(rowNum * colNum, mean = 0, sd = noise),
-            nrow = rowNum,
-            ncol = colNum
-        )
+    dat = rnorm(rowNum * colNum, mean = 0, sd = noise)
+    epsilon<- matrixStats::allocMatrix(rowNum,colNum,value = 0.0)
+    epsilon <- dat
     
+    # epsilon <-
+    #     matrix(
+    #         data = rnorm(rowNum * colNum, mean = 0, sd = noise),
+    #         nrow = rowNum,
+    #         ncol = colNum
+    #     )
+    
+ 
     list(
         data = data + epsilon,
         ConnectivityMatrixHandler = function(connectivityMatrix, ...) {

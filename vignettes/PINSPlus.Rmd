@@ -1,25 +1,29 @@
 ---
-title: "PINSPlus: Clustering Algorithm for Data Integration and Disease Subtyping"
-
+title: 'PINSPlus: Clustering Algorithm for Data Integration and Disease Subtyping'
 author: |
-  | Hung Nguyen, Sangam Shrestha, and Tin Nguyen$^*$
+  | Bang Tran, Duc Tran, Hung Nguyen and Tin Nguyen$^*$
   | Department of Computer Science and Engineering
   | University of Nevada, Reno, NV 89557
-
 date: "`r Sys.Date()`"
-
-abstract: "PINS+ provides a robust approach for data integration and disease subtyping. It allows for unsupervised clustering using multi-omics data. The method automatically determines the optimal number of clusters and then partitions the samples in a way such that the results are robust to noise and data perturbation. PINS+ has been validated on thousands of cancer samples obtained from the Gene Expression Omnibus, the Broad Institute, The Cancer Genome Atlas (TCGA), and the European Genome-Phenome Archive. The approach can accurately identify known subtypes and discover novel groups of patients with significantly different survival profiles. The software is extremely fast and able to cluster hundreds of matched samples in minutes."
-
-output: pdf_document
-
+output:
+  pdf_document: default
+  word_document: default
+  html_document:
+    df_print: paged
 bibliography: PINSPlus.bib
-
 csl: ieee.csl
-
-vignette: >
-  %\VignetteEngine{knitr::knitr}
-  %\VignetteIndexEntry{PINSPlus}
-  %\usepackage[UTF-8]{inputenc}
+abstract: PINS+ provides a robust approach for data integration and disease subtyping.
+  It allows for unsupervised clustering using multi-omics data. The method automatically
+  determines the optimal number of clusters and then partitions the samples in a way
+  such that the results are robust to noise and data perturbation. PINS+ has been
+  validated on thousands of cancer samples obtained from the Gene Expression Omnibus,
+  the Broad Institute, The Cancer Genome Atlas (TCGA), the European Genome-Phenome
+  Archive and simulation data. The approach can accurately identify known subtypes
+  and discover novel groups of patients with significantly different survival profiles.
+  The software is extremely fast and able to cluster hundreds of matched samples in
+  minutes.
+vignette: |
+  %\VignetteEngine{knitr::knitr} %\VignetteIndexEntry{PINSPlus} %\usepackage[UTF-8]{inputenc}
 ---
 
 \tableofcontents
@@ -43,17 +47,18 @@ Load example data `AML2004`
 ```{r message=FALSE}
 library(PINSPlus)
 data(AML2004)
+data <- as.matrix(AML2004$Gene)
 ```
 
 #### Run `PerturbationClustering`
 Run `PerturbationClustering` with default parameters
 ```{r}
-system.time(result <- PerturbationClustering(data = AML2004$Gene, verbose = FALSE))
+system.time(result <- PerturbationClustering(data = data, verbose = FALSE))
 ```
 
 `PerturbationClustering` supports parallel computing using the `ncore` parameter (default `ncore = 2`):
 ```{r, eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, ncore = 8)
+result <- PerturbationClustering(data = data)
 ```
 
 Print out the number of clusters:
@@ -81,24 +86,24 @@ legend("bottomleft", legend = names(condition), pch = condition)
 
 By default, `PerturbationClustering` runs with `kMax = 10` and `kmeans` as the basic algorithm. `PerturbationClustering` performs `kmeans` clustering to partition the input data with $k\in[2,10]$ and then computes the optimal value of $k$.
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, kMax = 10, 
+result <- PerturbationClustering(data = data, kMax = 10, 
                                  clusteringMethod = "kmeans")
 ```
 To switch to other basic algorithms, use the `clusteringMethod` argument:
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, kMax = 10, 
+result <- PerturbationClustering(data = data, kMax = 10, 
                                  clusteringMethod = "pam")
 ```
 or
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, kMax = 10, 
+result <- PerturbationClustering(data = data, kMax = 10, 
                                  clusteringMethod = "hclust")
 ```
 
 By default, `kmeans` clustering runs with parameters `nstart = 20` and `iter.max = 1000`. Users can pass new values to `clusteringOptions` to change these values:
 ```{r,eval=FALSE}
 result <- PerturbationClustering(
-    data = AML2004$Gene, 
+    data = data, 
     clusteringMethod = "kmeans",
     clusteringOptions = list(nstart = 100, iter.max = 500),
     verbose = FALSE
@@ -107,7 +112,7 @@ result <- PerturbationClustering(
 
 Instead of using the built-in clustering algorithms such as `kmeans`, `pam`, and `hclust`, users can also pass their own clustering algorithm via the `clusteringFunction` argument.
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, 
+result <- PerturbationClustering(data = data, 
     clusteringFunction = function(data, k){
     # this function must return a vector of cluster
     kmeans(x = data, centers = k, nstart = k*10, iter.max = 2000)$cluster
@@ -117,13 +122,13 @@ In the above example, we use our version of `kmeans` instead of the built-in `km
 
 By default, `PerturbationClustering` adds noise to perturbate the data before clustering. The `noise` perturbation method by default accepts two arguments: `noise = NULL` and `noisePercent = "median"`. To change these parameters, users can pass new values to `perturbOptions`:
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, 
+result <- PerturbationClustering(data = data, 
                                  perturbMethod = "noise", 
                                  perturbOptions = list(noise = 1.23)) 
 ```
 or
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, 
+result <- PerturbationClustering(data = data, 
                                  perturbMethod = "noise", 
                                  perturbOptions = list(noisePercent = 10)) 
 ```
@@ -131,14 +136,14 @@ If the `noise` parameter is specified, the `noisePercent` parameter will be skip
 
 `PerturbationClustering` provides another built-in perturbation method called `subsampling` with a `percent` parameter:
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, 
+result <- PerturbationClustering(data = data, 
                                  perturbMethod = "subsampling", 
                                  perturbOptions = list(percent = 80)) 
 ```
 
 If users wish to use their own perturbation method, they can pass it to the `perturbFunction` parameter:
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, perturbFunction = function(data){
+result <- PerturbationClustering(data = data, perturbFunction = function(data){
     rowNum <- nrow(data)
     colNum <- ncol(data)
     epsilon <-
@@ -169,8 +174,7 @@ The one argument `perturbFunction` takes is `data` - the original input matrix. 
 
 
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = AML2004$Gene, iterMax = 200, 
-                                 iterMin = 10, madMin = 1e-2, msdMin = 1e-4) 
+result <- PerturbationClustering(data = data) 
 ```
 
 \section{SubtypingOmicsData}
@@ -187,7 +191,7 @@ SubtypingOmicsData automatically finds the optimum number of subtypes and its me
 data(KIRC) 
 # SubtypingOmicsData`'s input data must be a list of 
 # numeric matrices or data frames that have the same number of rows:
-dataList <- list (KIRC$GE, KIRC$ME, KIRC$MI) 
+dataList <- list (as.matrix(KIRC$GE), as.matrix(KIRC$ME), as.matrix(KIRC$MI)) 
 names(dataList) <- c("GE", "ME", "MI")
 # Run `SubtypingOmicsData`:
 result <- SubtypingOmicsData(dataList = dataList)

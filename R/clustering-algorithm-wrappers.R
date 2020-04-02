@@ -4,7 +4,7 @@ kmeansWrapper <- function(data, k, nstart = 20, iter.max = 1000, ...) {
 }
 
 pamWrapper <- function(data, k, ...){
-    pam(data, k, cluster.only = T, ...)
+    cluster::pam(data, k, cluster.only = T, ...)
 }
 
 hclustWrapper <- function(data, k, ...){

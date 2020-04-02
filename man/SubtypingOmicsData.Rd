@@ -4,15 +4,23 @@
 \alias{SubtypingOmicsData}
 \title{Subtyping multi-omics data}
 \usage{
-SubtypingOmicsData(dataList, kMax = 5, agreementCutoff = 0.5,
-  verbose = T, ...)
+SubtypingOmicsData(
+  dataList,
+  kMax = 5,
+  agreementCutoff = 0.5,
+  ncore = 1,
+  verbose = T,
+  ...
+)
 }
 \arguments{
-\item{dataList}{a list of data matrices or data frames. Each matrix represents a data type where the rows are items and the columns are features. The matrices must have the same set of items.}
+\item{dataList}{a list of data matrices. Each matrix represents a data type where the rows are items and the columns are features. The matrices must have the same set of items.}
 
 \item{kMax}{the maximum number of clusters. Default value is \code{5}.}
 
 \item{agreementCutoff}{agreement threshold to be considered consistent. Default value is \code{0.5}.}
+
+\item{ncore}{Number of cores that the algorithm should use. Default value is \code{1}.}
 
 \item{verbose}{set it to \code{TRUE} of \code{FALSE} to get more or less details respectively.}
 
@@ -45,7 +53,7 @@ or if the subtyping in Stage I is very unbalanced.
 data(KIRC)
 
 # Perform subtyping on the multi-omics data
-dataList <- list (KIRC$GE, KIRC$ME, KIRC$MI) 
+dataList <- list (as.matrix(KIRC$GE), as.matrix(KIRC$ME), as.matrix(KIRC$MI)) 
 names(dataList) <- c("GE", "ME", "MI")
 result <- SubtypingOmicsData(dataList = dataList)
 

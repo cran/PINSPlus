@@ -1,20 +1,21 @@
-## ----message=FALSE-------------------------------------------------------
+## ----message=FALSE------------------------------------------------------------
 library(PINSPlus)
 data(AML2004)
+data <- as.matrix(AML2004$Gene)
 
-## ------------------------------------------------------------------------
-system.time(result <- PerturbationClustering(data = AML2004$Gene, verbose = FALSE))
+## -----------------------------------------------------------------------------
+system.time(result <- PerturbationClustering(data = data, verbose = FALSE))
 
-## ---- eval=FALSE---------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene, ncore = 8)
+## ---- eval=FALSE--------------------------------------------------------------
+#  result <- PerturbationClustering(data = data)
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 result$k
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 result$cluster
 
-## ------------------------------------------------------------------------
+## -----------------------------------------------------------------------------
 condition <- seq(unique(AML2004$Group[, 2]))
 names(condition) = unique(AML2004$Group[, 2])
 plot(prcomp(AML2004$Gene)$x, col = result$cluster, 
@@ -23,50 +24,50 @@ legend("bottomright", legend = paste("Cluster ", sort(unique(result$cluster)), s
         fill = sort(unique(result$cluster)))
 legend("bottomleft", legend = names(condition), pch = condition)
 
-## ----eval=FALSE----------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene, kMax = 10,
+## ----eval=FALSE---------------------------------------------------------------
+#  result <- PerturbationClustering(data = data, kMax = 10,
 #                                   clusteringMethod = "kmeans")
 
-## ----eval=FALSE----------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene, kMax = 10,
+## ----eval=FALSE---------------------------------------------------------------
+#  result <- PerturbationClustering(data = data, kMax = 10,
 #                                   clusteringMethod = "pam")
 
-## ----eval=FALSE----------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene, kMax = 10,
+## ----eval=FALSE---------------------------------------------------------------
+#  result <- PerturbationClustering(data = data, kMax = 10,
 #                                   clusteringMethod = "hclust")
 
-## ----eval=FALSE----------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  result <- PerturbationClustering(
-#      data = AML2004$Gene,
+#      data = data,
 #      clusteringMethod = "kmeans",
 #      clusteringOptions = list(nstart = 100, iter.max = 500),
 #      verbose = FALSE
 #  )
 
-## ----eval=FALSE----------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene,
+## ----eval=FALSE---------------------------------------------------------------
+#  result <- PerturbationClustering(data = data,
 #      clusteringFunction = function(data, k){
 #      # this function must return a vector of cluster
 #      kmeans(x = data, centers = k, nstart = k*10, iter.max = 2000)$cluster
 #  })
 
-## ----eval=FALSE----------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene,
+## ----eval=FALSE---------------------------------------------------------------
+#  result <- PerturbationClustering(data = data,
 #                                   perturbMethod = "noise",
 #                                   perturbOptions = list(noise = 1.23))
 
-## ----eval=FALSE----------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene,
+## ----eval=FALSE---------------------------------------------------------------
+#  result <- PerturbationClustering(data = data,
 #                                   perturbMethod = "noise",
 #                                   perturbOptions = list(noisePercent = 10))
 
-## ----eval=FALSE----------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene,
+## ----eval=FALSE---------------------------------------------------------------
+#  result <- PerturbationClustering(data = data,
 #                                   perturbMethod = "subsampling",
 #                                   perturbOptions = list(percent = 80))
 
-## ----eval=FALSE----------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene, perturbFunction = function(data){
+## ----eval=FALSE---------------------------------------------------------------
+#  result <- PerturbationClustering(data = data, perturbFunction = function(data){
 #      rowNum <- nrow(data)
 #      colNum <- ncol(data)
 #      epsilon <-
@@ -83,28 +84,27 @@ legend("bottomleft", legend = names(condition), pch = condition)
 #      )
 #  })
 
-## ----eval=FALSE----------------------------------------------------------
-#  result <- PerturbationClustering(data = AML2004$Gene, iterMax = 200,
-#                                   iterMin = 10, madMin = 1e-2, msdMin = 1e-4)
+## ----eval=FALSE---------------------------------------------------------------
+#  result <- PerturbationClustering(data = data)
 
-## ----eval=FALSE----------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  # Load the kidney cancer carcinoma data
 #  data(KIRC)
 #  # SubtypingOmicsData`'s input data must be a list of
 #  # numeric matrices or data frames that have the same number of rows:
-#  dataList <- list (KIRC$GE, KIRC$ME, KIRC$MI)
+#  dataList <- list (as.matrix(KIRC$GE), as.matrix(KIRC$ME), as.matrix(KIRC$MI))
 #  names(dataList) <- c("GE", "ME", "MI")
 #  # Run `SubtypingOmicsData`:
 #  result <- SubtypingOmicsData(dataList = dataList)
 
-## ----eval=FALSE----------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  result <- SubtypingOmicsData(
 #      dataList = dataList,
 #      clusteringMethod = "kmeans",
 #      clusteringOptions = list(nstart = 50)
 #  )
 
-## ----eval=FALSE----------------------------------------------------------
+## ----eval=FALSE---------------------------------------------------------------
 #  library(survival)
 #  cluster1=result$cluster1;cluster2=result$cluster2
 #  a <- intersect(unique(cluster2), unique(cluster1))

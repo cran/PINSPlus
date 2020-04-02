@@ -17,6 +17,8 @@ PINS+ provides \code{\link{PerturbationClustering}} and \code{\link{SubtypingOmi
 \references{
 T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. 
 Genome Research, 27(12):2025-2039, 2017.
+
+Nguyen, H., Shrestha, S., Draghici, S., & Nguyen, T. (2019). PINSPlus: a tool for tumor subtype discovery in integrated genomic data. Bioinformatics, 35(16), 2843-2846.
 }
 
 \keyword{ package }

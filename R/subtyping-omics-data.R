@@ -1,9 +1,10 @@
 #' @title Subtyping multi-omics data
 #' @description Perform subtyping using multiple types of data
 #' 
-#' @param dataList a list of data matrices or data frames. Each matrix represents a data type where the rows are items and the columns are features. The matrices must have the same set of items.
+#' @param dataList a list of data matrices. Each matrix represents a data type where the rows are items and the columns are features. The matrices must have the same set of items.
 #' @param kMax the maximum number of clusters. Default value is \code{5}.
 #' @param agreementCutoff agreement threshold to be considered consistent. Default value is \code{0.5}.
+#' @param ncore Number of cores that the algorithm should use. Default value is \code{1}.
 #' @param verbose set it to \code{TRUE} of \code{FALSE} to get more or less details respectively.
 #' @param ... these arguments will be passed to \code{PerturbationClustering} algorithm. See details for more information
 #' 
@@ -42,7 +43,7 @@
 #' data(KIRC)
 #' 
 #' # Perform subtyping on the multi-omics data
-#' dataList <- list (KIRC$GE, KIRC$ME, KIRC$MI) 
+#' dataList <- list (as.matrix(KIRC$GE), as.matrix(KIRC$ME), as.matrix(KIRC$MI)) 
 #' names(dataList) <- c("GE", "ME", "MI")
 #' result <- SubtypingOmicsData(dataList = dataList)
 #' 
@@ -90,8 +91,10 @@
 #' )
 #' 
 #' }
+#' @importFrom FNN knnx.index
+#' @importFrom entropy entropy
 #' @export
-SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, verbose = T, ...) {
+SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, ncore = 1, verbose = T, ...) {
     now = Sys.time()
     
     # defined log function
@@ -100,12 +103,24 @@ SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, verbo
         flush.console()
     }
     
+    dataListTrain <- NULL
+    dataListTest <- NULL
+    
     seed = round(rnorm(1)*10^6)
+    
+    if (nrow(dataList[[1]]) > 2000) {
+        n_samples <- nrow(dataList[[1]])
+        ind <- sample.int(n_samples, size = 2000)
+        dataListTrain <- lapply(dataList, function(x) x[ind, ])
+        dataListTest <- lapply(dataList, function(x) x[-ind, , drop=F])
+        
+        dataList <- dataListTrain
+    }
     
     runPerturbationClustering <- function(dataList, kMax, stage = 1, forceSplit = FALSE){
         dataTypeResult <- lapply(dataList, function(data) {
             set.seed(seed)
-            PerturbationClustering(data, kMax, verbose = verbose,...)
+            PerturbationClustering(data, kMax, ncore = ncore, verbose = verbose,...)
         })
         origList <- lapply(dataTypeResult, function(r) r$origS[[r$k]])
         orig = Reduce('+', origList)/length(origList)
@@ -182,6 +197,65 @@ SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, verbo
                         groups2[miniGroup] <- paste(g, groupsM, sep = "-")
                 }
             }
+        }
+    }
+    
+    train_y <- groups
+    train_y2 <- groups2
+    
+    if(!is.null(dataListTest)) {
+        set.seed(seed)
+        RcppParallel::setThreadOptions(ncore)
+        
+        test_prob <- matrix(0, nrow = n_samples - 2000, ncol = length(unique(groups)))
+        if(!is.null(train_y2))
+        {
+            test_prob2 <- matrix(0, nrow = n_samples - 2000, ncol = length(unique(groups2)))
+        }
+        for (i in 1:length(dataListTrain)) {
+            train <- dataListTrain[[i]]
+            test <- dataListTest[[i]]
+            
+            if(ncol(train)*nrow(train) > 2e7) {
+                pca <- pResult$dataTypeResult[[i]]$pca
+            } else {
+                pca <- rpca.para(train, min(nrow(data), 20), scale = F)
+            }
+
+            train <- pca$x
+            test <- predict.rpca.para(pca, test)
+            
+            nn_index <- FNN::knnx.index(train, test, k = 10)
+            
+            nn_group <- matrix(train_y[nn_index], ncol = 10)
+            
+            for (j in 1:nrow(test_prob)) {
+                tmp <- table(nn_group[j, ])
+                test_prob[j, as.numeric(names(tmp))] <- test_prob[j, as.numeric(names(tmp))] + as.numeric(tmp)/10
+            }
+            
+            if(!is.null(train_y2))
+            {
+                nn_group2 <- matrix(train_y2[nn_index], ncol = 10)
+                
+                for (j in 1:nrow(test_prob)) {
+                    tmp <- table(nn_group2[j, ])
+                    test_prob2[j, as.numeric(names(tmp))] <- test_prob2[j, as.numeric(names(tmp))] + as.numeric(tmp)/10
+                }
+            }
+        }
+        
+        test_y <- apply(test_prob, 1, which.max)
+        
+        groups <- rep(0, n_samples)
+        groups[ind] <- train_y
+        groups[-ind] <- test_y
+        
+        if(!is.null(train_y2)) {
+            test_y2 <- apply(test_prob2, 1, which.max)
+            groups2 <- rep(0, n_samples)
+            groups2[ind] <- train_y2
+            groups2[-ind] <- test_y2
         }
     }
     

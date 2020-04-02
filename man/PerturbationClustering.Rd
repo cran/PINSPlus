@@ -4,20 +4,32 @@
 \alias{PerturbationClustering}
 \title{Perturbation clustering}
 \usage{
-PerturbationClustering(data, kMax = 5, verbose = T, ncore = 2,
-  clusteringMethod = "kmeans", clusteringFunction = NULL,
-  clusteringOptions = NULL, perturbMethod = "noise",
-  perturbFunction = NULL, perturbOptions = NULL, PCAFunction = NULL,
-  iterMin = 20, iterMax = 200, madMin = 0.001, msdMin = 1e-06)
+PerturbationClustering(
+  data,
+  kMax = 5,
+  verbose = T,
+  ncore = 1,
+  clusteringMethod = "kmeans",
+  clusteringFunction = NULL,
+  clusteringOptions = NULL,
+  perturbMethod = "noise",
+  perturbFunction = NULL,
+  perturbOptions = NULL,
+  PCAFunction = NULL,
+  iterMin = 20,
+  iterMax = 200,
+  madMin = 0.001,
+  msdMin = 1e-06
+)
 }
 \arguments{
-\item{data}{Input matrix or data frame. The rows represent items while the columns represent features.}
+\item{data}{Input matrix. The rows represent items while the columns represent features.}
 
 \item{kMax}{The maximum number of clusters. The algorithm runs from \code{k = 2} to \code{k = kMax}. Default value is \code{5}.}
 
 \item{verbose}{Boolean value indicating the algorithm to run with or without logging. Default value is \code{TRUE}.}
 
-\item{ncore}{Number of cores that the algorithm should use. Default value is \code{2}.}
+\item{ncore}{Number of cores that the algorithm should use. Default value is \code{1}.}
 
 \item{clusteringMethod}{The name of built-in clustering algorithm that PerturbationClustering will use. Currently supported algorithm are \code{kmeans}, \code{pam} and \code{hclust}. Default value is "\code{kmeans}".}
 
@@ -31,7 +43,7 @@ PerturbationClustering(data, kMax = 5, verbose = T, ncore = 2,
 
 \item{perturbOptions}{A list of parameter will be passed to the perturbation method in \code{perturbMethod}.}
 
-\item{PCAFunction}{The function to reduce dimension of input \code{data} before clustering. By default \code{prcomp} will be used with \code{rank.=min(nrow(data), 200)}. If declared, this function receives \code{data} as the parameter and must return a numeric matrix.}
+\item{PCAFunction}{The customized PCA function that user can manually define.}
 
 \item{iterMin}{The minimum number of iterations. Default value is \code{20}.}
 
@@ -96,15 +108,15 @@ This function must returns a connectivity matrix that is merged from \code{oldMa
 \donttest{
 # Load the dataset AML2004
 data(AML2004)
-
+data <- as.matrix(AML2004$Gene)
 # Perform the clustering
-result <- PerturbationClustering(data = AML2004$Gene)
+result <- PerturbationClustering(data = data)
 
 # Plot the result
 condition = seq(unique(AML2004$Group[, 2]))
 names(condition) <- unique(AML2004$Group[, 2])
 plot(
-    prcomp(AML2004$Gene)$x,
+    prcomp(data)$x,
     col = result$cluster,
     pch = condition[AML2004$Group[, 2]],
     main = "AML2004"
@@ -118,7 +130,7 @@ legend("bottomleft", legend = names(condition), pch = condition)
 
 # Change kmeans parameters
 result <- PerturbationClustering(
-    data = AML2004$Gene,
+    data = data,
     clusteringMethod = "kmeans",
     clusteringOptions = list(
         iter.max = 500,
@@ -127,33 +139,33 @@ result <- PerturbationClustering(
 )
 
 # Change to use pam
-result <- PerturbationClustering(data = AML2004$Gene, clusteringMethod = "pam")
+result <- PerturbationClustering(data = data, clusteringMethod = "pam")
 
 # Change to use hclust
-result <- PerturbationClustering(data = AML2004$Gene, clusteringMethod = "hclust")
+result <- PerturbationClustering(data = data, clusteringMethod = "hclust")
 
 # Pass a user-defined clustering algorithm
-result <- PerturbationClustering(data = AML2004$Gene, clusteringFunction = function(data, k){
+result <- PerturbationClustering(data = data, clusteringFunction = function(data, k){
     # this function must return a vector of cluster
     kmeans(x = data, centers = k, nstart = k*10, iter.max = 2000)$cluster
 })      
 
 # Use noise as the perturb method
-result <- PerturbationClustering(data = AML2004$Gene, 
+result <- PerturbationClustering(data = data, 
                                  perturbMethod = "noise", 
                                  perturbOptions = list(noise = 0.3))
 # or
-result <- PerturbationClustering(data = AML2004$Gene, 
+result <- PerturbationClustering(data = data, 
                                  perturbMethod = "noise", 
                                  perturbOptions = list(noisePercent = 10))
 
 # Change to use subsampling
-result <- PerturbationClustering(data = AML2004$Gene, 
+result <- PerturbationClustering(data = data, 
                                  perturbMethod = "subsampling", 
                                  perturbOptions = list(percent = 90))
 
 # Users can pass their own perturb method
-result <- PerturbationClustering(data = AML2004$Gene, perturbFunction = function(data){
+result <- PerturbationClustering(data = data, perturbFunction = function(data){
    rowNum <- nrow(data)
    colNum <- ncol(data)
    epsilon <-
