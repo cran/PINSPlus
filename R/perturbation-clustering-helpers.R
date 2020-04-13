@@ -94,17 +94,18 @@ GetOriginalSimilarity <- function(data, clusRange, clusteringAlgorithm, showProg
     groupings <- list()
     origS <- list()
     
-    pb <- txtProgressBar(min = 0, max = length(clusRange), style = 3)
+    if (showProgress) {
+        pb <- txtProgressBar(min = 0, max = length(clusRange), style = 3)
+    }
     
     seeds = abs(round(rnorm(max(clusRange))*10^6))
-    
     
     for (clus in clusRange){
         set.seed(seeds[clus])
         groupings[[clus]] <- clusteringAlgorithm(data, clus)
         origS[[clus]] <- ClusterToConnectivity(groupings[[clus]])
         rownames(origS[[clus]]) <- colnames(origS[[clus]]) <- rownames(data)
-        setTxtProgressBar(pb, clus)
+        if (showProgress) setTxtProgressBar(pb, clus)
     }
     
     list(origS = origS, groupings = groupings)

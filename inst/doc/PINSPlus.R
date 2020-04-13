@@ -25,15 +25,15 @@ legend("bottomright", legend = paste("Cluster ", sort(unique(result$cluster)), s
 legend("bottomleft", legend = names(condition), pch = condition)
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  result <- PerturbationClustering(data = data, kMax = 10,
+#  result <- PerturbationClustering(data = data, kMax = 5,
 #                                   clusteringMethod = "kmeans")
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  result <- PerturbationClustering(data = data, kMax = 10,
+#  result <- PerturbationClustering(data = data, kMax = 5,
 #                                   clusteringMethod = "pam")
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  result <- PerturbationClustering(data = data, kMax = 10,
+#  result <- PerturbationClustering(data = data, kMax = 5,
 #                                   clusteringMethod = "hclust")
 
 ## ----eval=FALSE---------------------------------------------------------------
@@ -85,13 +85,68 @@ legend("bottomleft", legend = names(condition), pch = condition)
 #  })
 
 ## ----eval=FALSE---------------------------------------------------------------
-#  result <- PerturbationClustering(data = data)
+#  sampleNum <- 50000 # Number of samples
+#  geneNum <- 5000 # Number of genes
+#  subtypeNum <- 3 # Number of subtypes
+#  
+#  # Generate expression matrix
+#  exprs <- matrix(rnorm(sampleNum*geneNum, 0, 1), nrow = sampleNum, ncol = geneNum)
+#  rownames(exprs) <- paste0("S", 1:sampleNum) # Assign unique names for samples
+#  
+#  # Generate subtypes
+#  group <- sort(rep(1:subtypeNum, sampleNum/subtypeNum + 1)[1:sampleNum])
+#  names(group) <- rownames(exprs)
+#  
+#  # Make subtypes separate
+#  for (i in 1:subtypeNum) {
+#    exprs[group == i, 1:100 + 100*(i-1)] <- exprs[group == i, 1:100 + 100*(i-1)] + 2
+#  }
+#  
+#  # Plot the data
+#  library(irlba)
+#  exprs.pca <- irlba::prcomp_irlba(exprs, n = 2)$x
+#  plot(exprs.pca, main = "PCA")
+
+## ----eval=FALSE---------------------------------------------------------------
+#  set.seed(1)
+#  t1 <- Sys.time()
+#  result <- PerturbationClustering(data = exprs.pca, ncore = 1)
+#  t2 <- Sys.time()
+
+## ----eval=FALSE---------------------------------------------------------------
+#  t2-t1
+
+## ----eval=FALSE---------------------------------------------------------------
+#  result$k
+
+## ----eval=FALSE---------------------------------------------------------------
+#  subtype <- result$cluster
+
+## ----eval=FALSE---------------------------------------------------------------
+#  if (!require("mclust")) install.packages("mclust")
+#  library(mclust)
+#  ari <- mclust::adjustedRandIndex(subtype, group)
+#  
+
+## ----eval=FALSE---------------------------------------------------------------
+#  
+#  colors <- as.numeric(as.character(factor(subtype)))
+#  
+#  plot(exprs.pca, col = colors, main = "Cluster assigments for simulation data")
+#  
+#  legend("topright", legend = paste("ARI:", ari))
+#  
+#  legend("bottomright", fill = unique(colors),
+#      legend = paste("Group ",
+#                     levels(factor(subtype)), ": ",
+#                     table(subtype)[levels(factor(subtype))], sep = "" )
+#      )
 
 ## ----eval=FALSE---------------------------------------------------------------
 #  # Load the kidney cancer carcinoma data
 #  data(KIRC)
 #  # SubtypingOmicsData`'s input data must be a list of
-#  # numeric matrices or data frames that have the same number of rows:
+#  # numeric matrices that have the same number of rows:
 #  dataList <- list (as.matrix(KIRC$GE), as.matrix(KIRC$ME), as.matrix(KIRC$MI))
 #  names(dataList) <- c("GE", "ME", "MI")
 #  # Run `SubtypingOmicsData`:

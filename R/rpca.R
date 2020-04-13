@@ -1,7 +1,8 @@
 #' @references
 #' N Benjamin Erichson, Sergey Voronin, Steven L Brunton, and J Nathan Kutz. Randomized matrix decompositions using r. arXiv preprint arXiv:1608.02148, 2016.
 #' @useDynLib PINSPlus
-#' @import RcppParallel
+#' @import RcppParallel 
+#' @importFrom Rcpp evalCpp
 rpca.para <- function(A, k=NULL, center=TRUE, scale=TRUE, retx=TRUE, p=10, q=2, rand = TRUE) {
   
   A <- as.matrix(A)

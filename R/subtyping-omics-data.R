@@ -10,7 +10,7 @@
 #' 
 #' @details
 #' 
-#' \code{SubtypingOmicsData} implements the Subtyping multi-omic data that are based on Perturbaion clustering algorithm of Nguyen, et al (2017).
+#' \code{SubtypingOmicsData} implements the Subtyping multi-omic data that are based on Perturbaion clustering algorithm of Nguyen, et al (2017) and Nguyen, et al (2019).
 #' The input is  a list of data matrices where each matrix represents the molecular measurements of a data type. The input matrices must have the same number of rows. 
 #' \code{SubtypingOmicsData} aims to find the optimum number of subtypes and location of each sample in the clusters from integrated input data \code{dataList} through two processing stages:
 #' 
@@ -31,9 +31,11 @@
 #' 
 #' @references
 #' 
-#' 1. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+#' 1. H Nguyen, S Shrestha, S Draghici, & T Nguyen. PINSPlus: a tool for tumor subtype discovery in integrated genomic data. Bioinformatics, 35(16), 2843-2846, (2019).
 #' 
-#' 2. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
+#' 2. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+#' 
+#' 3. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
 #' 
 #' @seealso \code{\link{PerturbationClustering}}
 #' 

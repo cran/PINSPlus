@@ -1,13 +1,13 @@
 ---
 title: 'PINSPlus: Clustering Algorithm for Data Integration and Disease Subtyping'
 author: |
-  | Bang Tran, Duc Tran, Hung Nguyen and Tin Nguyen$^*$
+  | Hung Nguyen, Bang Tran, Duc Tran and Tin Nguyen$^*$
   | Department of Computer Science and Engineering
   | University of Nevada, Reno, NV 89557
 date: "`r Sys.Date()`"
 output:
   pdf_document: default
-  word_document: default
+  word_document:
   html_document:
     df_print: paged
 bibliography: PINSPlus.bib
@@ -15,15 +15,12 @@ csl: ieee.csl
 abstract: PINS+ provides a robust approach for data integration and disease subtyping.
   It allows for unsupervised clustering using multi-omics data. The method automatically
   determines the optimal number of clusters and then partitions the samples in a way
-  such that the results are robust to noise and data perturbation. PINS+ has been
-  validated on thousands of cancer samples obtained from the Gene Expression Omnibus,
-  the Broad Institute, The Cancer Genome Atlas (TCGA), the European Genome-Phenome
-  Archive and simulation data. The approach can accurately identify known subtypes
-  and discover novel groups of patients with significantly different survival profiles.
-  The software is extremely fast and able to cluster hundreds of matched samples in
-  minutes.
-vignette: |
-  %\VignetteEngine{knitr::knitr} %\VignetteIndexEntry{PINSPlus} %\usepackage[UTF-8]{inputenc}
+  such that the results are robust against noise and data perturbation. PINS+ has been
+  validated on thousands of cancer samples obtained from The Cancer Genome Atlas (TCGA), the   European Genome-Phenome Archive and simulation data. The approach can accurately identify   known subtypes and discover novel groups of patients with significantly different survival   profiles. The software is extremely fast and able to cluster tens of thousands of matched   samples in three minutes.
+vignette: >
+  %\VignetteIndexEntry{PINSPlus}
+  %\VignetteEngine{knitr::knitr}
+  %\usepackage[UTF-8]{inputenc}
 ---
 
 \tableofcontents
@@ -31,9 +28,9 @@ vignette: |
 \newpage 
 
 \section{Introduction}
-In a recent paper published in Genome Research, Nguyen et al. [@nguyen2017novel] proposed a robust approach for multi-omics data integration and disease subtyping called PINS. The framework was tested upon many datasets obtained from the Gene Expression Omnibus, the Broad Institute, The Cancer Genome Atlas (TCGA), and the European Genome-Phenome Archive. In the analysis, PINS outperforms state-of-the-art clustering methods like Similarity Network Fusion (SNF) [@wang2014Similarity], Consensus Clustering (CC) [@monti2003Consensus], and iClusterPlus [@mo2013pattern] in identifying known subtypes and in discovering novel groups of patients with significantly different survival profiles. Please consult Nguyen et al. [@nguyen2017novel; @nguyen2017horizontal] for the mathematical description.
+In recent articles published in Genome Research [@nguyen2017novel] and Bioinformatics [@nguyen2019pinsplus], Nguyen et al.  proposed a perturbation clustering approach for multi-omics data integration and disease subtyping called PINS. The framework was tested upon many datasets obtained from The Cancer Genome Atlas (TCGA), the European Genome-Phenome Archive and simulation study. Please consult Nguyen et al. [@nguyen2019pinsplus;@nguyen2017novel; @nguyen2017horizontal] for the mathematical description.
 
-PINS+ offers many improvements of PINS from practical perspectives. One outstanding feature is that the package is extremely fast. For example, it takes PINS+ only five minutes using a single core to analyze the Glioblastoma dataset (273 patients with three data types, mRNA, miRNA, and methylation) while it takes PINS 175 minutes (almost three hours) to analyze the same dataset (see Supplemental Table S14 in Nguyen et al. [@nguyen2017novel] for running time of PINS). PINS+ also allows for parallelization on any of the three platforms: Windows, Linux, and Mac OS. In addition, PINS+ provides users with more flexibility, including customized basic clustering algorithms, distance metrics, noise levels, subsampling, data perturbation, etc.
+PINS+ offers many improvements of PINS from practical perspectives. One outstanding feature is that the package is extremely fast and highly scalable. For example, it takes PINS+ only two minutes using a single core to analyze the Breast invasive carcinoma (BRCA) dataset (622 patients with three data types, mRNA, miRNA, and methylation) while it takes PINS 236 minutes (almost four hours) to analyze the same dataset.
 
 This document provides a tutorial on how to use the PINS+ package. PINS+ is designed to be convenient for users and uses two main functions: `PerturbationClustering` and `SubtypingOmicsData`. `PerturbationClustering` allows users to cluster a single data type while `SubtypingOmicsData` allows users to cluster multiple types of data.
 
@@ -56,7 +53,7 @@ Run `PerturbationClustering` with default parameters
 system.time(result <- PerturbationClustering(data = data, verbose = FALSE))
 ```
 
-`PerturbationClustering` supports parallel computing using the `ncore` parameter (default `ncore = 2`):
+`PerturbationClustering` supports parallel computing using the `ncore` parameter (default `ncore = 1`):
 ```{r, eval=FALSE}
 result <- PerturbationClustering(data = data)
 ```
@@ -84,19 +81,19 @@ legend("bottomright", legend = paste("Cluster ", sort(unique(result$cluster)), s
 legend("bottomleft", legend = names(condition), pch = condition)
 ```
 
-By default, `PerturbationClustering` runs with `kMax = 10` and `kmeans` as the basic algorithm. `PerturbationClustering` performs `kmeans` clustering to partition the input data with $k\in[2,10]$ and then computes the optimal value of $k$.
+By default, `PerturbationClustering` runs with `kMax = 5` and `kmeans` as the basic algorithm. `PerturbationClustering` performs `kmeans` clustering to partition the input data with $k\in[2,10]$ and then computes the optimal value of $k$.
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = data, kMax = 10, 
+result <- PerturbationClustering(data = data, kMax = 5, 
                                  clusteringMethod = "kmeans")
 ```
 To switch to other basic algorithms, use the `clusteringMethod` argument:
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = data, kMax = 10, 
+result <- PerturbationClustering(data = data, kMax = 5, 
                                  clusteringMethod = "pam")
 ```
 or
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = data, kMax = 10, 
+result <- PerturbationClustering(data = data, kMax = 5, 
                                  clusteringMethod = "hclust")
 ```
 
@@ -173,9 +170,87 @@ The one argument `perturbFunction` takes is `data` - the original input matrix. 
 - `msdMin`: the minimum of Mean Square Deviation of AUC of Connectivity matrices.
 
 
+\section{Clustering big data using simulation}
+
+#### Preparing data
+
+We will create a simulation dataset that contains 50,000 samples and 5,000 genes. The dataset is represented in a matrix where rows are samples and columns are genes. The dataset has three distinct subtypes.
+
+Prepare data:
 ```{r,eval=FALSE}
-result <- PerturbationClustering(data = data) 
+sampleNum <- 50000 # Number of samples
+geneNum <- 5000 # Number of genes
+subtypeNum <- 3 # Number of subtypes
+
+# Generate expression matrix
+exprs <- matrix(rnorm(sampleNum*geneNum, 0, 1), nrow = sampleNum, ncol = geneNum) 
+rownames(exprs) <- paste0("S", 1:sampleNum) # Assign unique names for samples
+
+# Generate subtypes
+group <- sort(rep(1:subtypeNum, sampleNum/subtypeNum + 1)[1:sampleNum])
+names(group) <- rownames(exprs)
+
+# Make subtypes separate
+for (i in 1:subtypeNum) {
+  exprs[group == i, 1:100 + 100*(i-1)] <- exprs[group == i, 1:100 + 100*(i-1)] + 2
+}
+
+# Plot the data
+library(irlba)
+exprs.pca <- irlba::prcomp_irlba(exprs, n = 2)$x
+plot(exprs.pca, main = "PCA")
 ```
+![](PCA1.png)
+
+Run PINSPlus clustering:
+```{r,eval=FALSE}
+set.seed(1)
+t1 <- Sys.time()
+result <- PerturbationClustering(data = exprs.pca, ncore = 1)
+t2 <- Sys.time()
+```
+
+Print out the running time:
+```{r,eval=FALSE}
+t2-t1
+```
+
+Print out the number of clusters:
+```{r,eval=FALSE}
+result$k
+```
+
+Get the clusters assignment
+```{r,eval=FALSE}
+subtype <- result$cluster
+```
+
+Here we assess the clustering accurracy using Adjusted Rand Index (ARI) [@steinley2004properties]. ARI takes values from -1 to 1 where 0 stands for a random clustering and 1 stands for a perfect partition result. 
+
+```{r,eval=FALSE}
+if (!require("mclust")) install.packages("mclust")
+library(mclust)
+ari <- mclust::adjustedRandIndex(subtype, group)
+
+```
+
+Plot the cluster assginments
+```{r,eval=FALSE}
+
+colors <- as.numeric(as.character(factor(subtype)))
+
+plot(exprs.pca, col = colors, main = "Cluster assigments for simulation data")
+
+legend("topright", legend = paste("ARI:", ari))
+
+legend("bottomright", fill = unique(colors),
+    legend = paste("Group ", 
+                   levels(factor(subtype)), ": ", 
+                   table(subtype)[levels(factor(subtype))], sep = "" )
+    )
+```
+
+![](PCA2.png)
 
 \section{SubtypingOmicsData}
 
@@ -190,7 +265,7 @@ SubtypingOmicsData automatically finds the optimum number of subtypes and its me
 # Load the kidney cancer carcinoma data
 data(KIRC) 
 # SubtypingOmicsData`'s input data must be a list of 
-# numeric matrices or data frames that have the same number of rows:
+# numeric matrices that have the same number of rows:
 dataList <- list (as.matrix(KIRC$GE), as.matrix(KIRC$ME), as.matrix(KIRC$MI)) 
 names(dataList) <- c("GE", "ME", "MI")
 # Run `SubtypingOmicsData`:
@@ -241,7 +316,7 @@ legend(
 )
 ```
 
-![KIRC result](KIRC.png)
+![](KIRC.png)
 
 \newpage
 

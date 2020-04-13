@@ -64,7 +64,7 @@ PerturbationClustering(
 Perform subtyping using one type of high-dimensional data
 }
 \details{
-PerturbationClustering implements the Perturbation Clustering algorithm of Nguyen, et al (2017).
+PerturbationClustering implements the Perturbation Clustering algorithm of Nguyen, et al (2017) and Nguyen, et al (2019).
 It aims to determine the optimum cluster number and location of each sample in the clusters in an unsupervised analysis.
 
 PerturbationClustering takes input as a numerical matrix or data frame of items as rows and features as columns.
@@ -74,7 +74,7 @@ The default parameters for built-in \code{kmeans} are \code{nstart = 20 and iter
 Users can change the parameters of built-in clustering algorithm by passing the value into \code{clusteringOptions}.
 
 PerturbationClustering also allows users to pass their own clustering algorithm instead of using built-in ones by using \code{clusteringFunction} parameter. 
-Once \code{clusteringFunction} is specified, \code{clusteringMethod} will be skipped.
+Once \code{clust?eringFunction} is specified, \code{clusteringMethod} will be skipped.
 The value of \code{clusteringFunction} must be a function that takes two arguments: \code{data} and \code{k}, 
 where \code{data} is a numeric matrix or data frame containing data that need to be clustered, and \code{k} is the number of clusters.
 \code{clusteringFunction} must return a vector of labels indicating the cluster to which each sample is allocated.
@@ -185,12 +185,83 @@ result <- PerturbationClustering(data = data, perturbFunction = function(data){
        }
    )
 })
+
+# Clustering on simulation data
+# Load necessary library
+
+if (!require("mclust")) install.packages("mclust")
+library(mclust)
+library(irlba)
+
+#Generate a simulated data matrix with the size of 50,000 x 5,000
+sampleNum <- 50000 # Number of samples
+geneNum <- 5000 # Number of genes
+subtypeNum <- 3 # Number of subtypes
+
+# Generate expression matrix
+exprs <- matrix(rnorm(sampleNum*geneNum, 0, 1), nrow = sampleNum, ncol = geneNum) 
+rownames(exprs) <- paste0("S", 1:sampleNum) # Assign unique names for samples
+
+# Generate subtypes
+group <- sort(rep(1:subtypeNum, sampleNum/subtypeNum + 1)[1:sampleNum])
+names(group) <- rownames(exprs)
+
+# Make subtypes separate
+for (i in 1:subtypeNum) {
+   exprs[group == i, 1:100 + 100*(i-1)] <- exprs[group == i, 1:100 + 100*(i-1)] + 2
+}
+
+# Plot the data
+library(irlba)
+exprs.pca <- irlba::prcomp_irlba(exprs, n = 2)$x
+plot(exprs.pca, main = "PCA")
+
+#Run PINSPlus clustering:
+
+set.seed(1)
+t1 <- Sys.time()
+result <- PerturbationClustering(data = exprs.pca, ncore = 1)
+t2 <- Sys.time()
+
+
+#Print out the running time:
+
+time<- t2-t1
+
+#Print out the number of clusters:
+
+result$k
+
+#Get cluster assignment
+
+subtype <- result$cluster
+
+# Assess the clustering accurracy using Adjusted Rand Index (ARI).
+if (!require("mclust")) install.packages("mclust")
+library(mclust)
+ari <- mclust::adjustedRandIndex(subtype, group)
+
+#Plot the cluster assginments
+
+colors <- as.numeric(as.character(factor(subtype)))
+
+plot(exprs.pca, col = colors, main = "Cluster assigments for simulation data")
+
+legend("topright", legend = paste("ARI:", ari))
+
+legend("bottomright", fill = unique(colors),
+      legend = paste("Group ", 
+                     levels(factor(subtype)), ": ", 
+                     table(subtype)[levels(factor(subtype))], sep = "" )
+)
 }
 }
 \references{
-1. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+1. H Nguyen, S Shrestha, S Draghici, & T Nguyen. PINSPlus: a tool for tumor subtype discovery in integrated genomic data. Bioinformatics, 35(16), 2843-2846, (2019).
 
-2. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
+2. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
+
+3. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
 }
 \seealso{
 \code{\link{kmeans}}, \code{\link{pam}}
