@@ -19,13 +19,7 @@ AddNoisePerturb <- function(data, noise) {
     epsilon<- matrixStats::allocMatrix(rowNum,colNum,value = 0.0)
     epsilon <- dat
     
-    # epsilon <-
-    #     matrix(
-    #         data = rnorm(rowNum * colNum, mean = 0, sd = noise),
-    #         nrow = rowNum,
-    #         ncol = colNum
-    #     )
-    
+
  
     list(
         data = data + epsilon,

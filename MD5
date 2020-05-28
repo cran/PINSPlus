@@ -1,14 +1,14 @@
-9b0458d9468bb011ec900ef0f1f73492 *DESCRIPTION
+d4f1185a45202b21aee68b5b91c71f5a *DESCRIPTION
 944129fc3b20e3642510f1a54131b5f4 *NAMESPACE
 779fe8c0e71e08c7ac975f7f4917d613 *R/RcppExports.R
 d6cb326f2f9a33809a9039289717d781 *R/clustering-algorithm-wrappers.R
-2c680b2b8b99c46eed7b1184c0a94e93 *R/perturb-functions.R
+9c8347bdbdc2ce29686c7554119e8a88 *R/perturb-functions.R
 39fc26cbc03179eac71b2d323eda84e7 *R/perturbation-clustering-helpers.R
-2489c044c51d572620e3557c473cf0de *R/perturbation-clustering.R
+ae856c961b9cf29b1975e09f46ff5449 *R/perturbation-clustering.R
 fdc05315fd32f21c8fa9354cebbf7084 *R/rpca.R
 5771364b2f9d83eaca2ae3b0af90d6a4 *R/stopping-criteria-handlers.R
-c8be58cccbc259bc4c15d43b92421576 *R/subtyping-omics-data-helpers.R
-a8a1a7c614dbe78f916399c1f1fadb12 *R/subtyping-omics-data.R
+57f2cdff1a5a9890ba50e489c53034dc *R/subtyping-omics-data-helpers.R
+3fdbe1f26dd3fa745f39e930a68bf551 *R/subtyping-omics-data.R
 46bc56149b051c0ffde71023e2a32548 *build/vignette.rds
 f89d8e79ea056f7d472f6c73a39526b2 *data/AML2004.rda
 e267166b30728adf382ad424bdca88fe *data/KIRC.rda
@@ -20,8 +20,8 @@ b9ad5716abc72ad9d91720e1d951a89b *inst/doc/PINSPlus.Rmd
 fa2088dbe2c3e96ec4388fad3332deae *man/AML2004.Rd
 abda0292cd37990dac2b7a8af9b58d78 *man/KIRC.Rd
 bc0eb01fa2b7fba7c9da544ee158cf79 *man/PINSPlus-package.Rd
-de63c502d7cab79d4febada9911796d3 *man/PerturbationClustering.Rd
-97e557985bf37602c67ec1b6c7b8b269 *man/SubtypingOmicsData.Rd
+d772ae35fb2fd344897b8550e4af1413 *man/PerturbationClustering.Rd
+e8818cb21a220d10d580236cc2517a33 *man/SubtypingOmicsData.Rd
 fdcb2e0c2502ed804ae55e75cf88055c *src/Makevars
 493d45b09b99a867493ba3c20bdb825f *src/Makevars.win
 25557a63039c8b9b80be1b36553ca221 *src/RcppExports.cpp
@@ -31,5 +31,5 @@ abbb709edde8fb81f987cc0cccf4d3ec *vignettes/PCA1.png
 6fc814ea24b23ca5916e72e8b46b7bd5 *vignettes/PCA2.png
 b9ad5716abc72ad9d91720e1d951a89b *vignettes/PINSPlus.Rmd
 db6495e2babf3adce453ff8ad5c9b769 *vignettes/PINSPlus.bib
-7651d567dac04f7abee51dd574a053bb *vignettes/PINSPlus.html
+166b878661c0a21eccff9764b9758d6f *vignettes/PINSPlus.html
 4e22ca2ed470aa88767c462d03295890 *vignettes/ieee.csl

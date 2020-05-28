@@ -3,6 +3,7 @@
 #' 
 #' @param data Input matrix. The rows represent items while the columns represent features.
 #' @param kMax The maximum number of clusters. The algorithm runs from \code{k = 2} to \code{k = kMax}. Default value is \code{5}.
+#' @param kMin The minimum number of clusters. Default value is \code{2}.
 #' @param verbose Boolean value indicating the algorithm to run with or without logging. Default value is \code{TRUE}.
 #' @param ncore Number of cores that the algorithm should use. Default value is \code{1}.
 #' @param clusteringMethod The name of built-in clustering algorithm that PerturbationClustering will use. Currently supported algorithm are \code{kmeans}, \code{pam} and \code{hclust}. Default value is "\code{kmeans}".
@@ -208,7 +209,9 @@
 #'
 #'subtype <- result$cluster
 #'
-#'# Assess the clustering accurracy using Adjusted Rand Index (ARI).
+#'# Here we assess the clustering accurracy using Adjusted Rand Index (ARI). 
+#'#ARI takes values from -1 to 1 where 0 stands for a random clustering and 1 
+#'#stands for a perfect partition result. 
 #'if (!require("mclust")) install.packages("mclust")
 #'library(mclust)
 #'ari <- mclust::adjustedRandIndex(subtype, group)
@@ -237,7 +240,7 @@
 #' @importFrom irlba prcomp_irlba
 #' @importFrom mclust adjustedRandIndex
 #' @export
-PerturbationClustering <- function(data, kMax = 5, verbose = T, ncore = 1, # Algorithm args
+PerturbationClustering <- function(data, kMin = 2, kMax = 5, verbose = T, ncore = 1, # Algorithm args
                                    clusteringMethod = "kmeans", clusteringFunction = NULL, clusteringOptions = NULL, # Based clustering algorithm args
                                    perturbMethod = "noise", perturbFunction = NULL, perturbOptions = NULL, # Perturbed function args
                                    PCAFunction = NULL, iterMin = 20, iterMax = 200, madMin = 1e-03, msdMin = 1e-06# Stopping condition for generating perturbation matrix
@@ -277,7 +280,7 @@ PerturbationClustering <- function(data, kMax = 5, verbose = T, ncore = 1, # Alg
     # get the partitioning from simply clustering the real data, for consecutive k
     log("Building original connectivity matrices")
     set.seed(seed)
-    origPartition <- GetOriginalSimilarity(data = pca$x, clusRange = 2 : kMax, clusteringAlgorithm = clusteringAlgorithm$fun, showProgress = verbose, ncore)
+    origPartition <- GetOriginalSimilarity(data = pca$x, clusRange = kMin : kMax, clusteringAlgorithm = clusteringAlgorithm$fun, showProgress = verbose, ncore)
     origS <- origPartition$origS
 
     listAUC <- list()

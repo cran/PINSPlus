@@ -6,6 +6,7 @@
 \usage{
 PerturbationClustering(
   data,
+  kMin = 2,
   kMax = 5,
   verbose = T,
   ncore = 1,
@@ -24,6 +25,8 @@ PerturbationClustering(
 }
 \arguments{
 \item{data}{Input matrix. The rows represent items while the columns represent features.}
+
+\item{kMin}{The minimum number of clusters. Default value is \code{2}.}
 
 \item{kMax}{The maximum number of clusters. The algorithm runs from \code{k = 2} to \code{k = kMax}. Default value is \code{5}.}
 
@@ -236,7 +239,9 @@ result$k
 
 subtype <- result$cluster
 
-# Assess the clustering accurracy using Adjusted Rand Index (ARI).
+# Here we assess the clustering accurracy using Adjusted Rand Index (ARI). 
+#ARI takes values from -1 to 1 where 0 stands for a random clustering and 1 
+#stands for a perfect partition result. 
 if (!require("mclust")) install.packages("mclust")
 library(mclust)
 ari <- mclust::adjustedRandIndex(subtype, group)

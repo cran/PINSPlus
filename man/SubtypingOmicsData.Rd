@@ -6,6 +6,7 @@
 \usage{
 SubtypingOmicsData(
   dataList,
+  kMin = 2,
   kMax = 5,
   agreementCutoff = 0.5,
   ncore = 1,
@@ -15,6 +16,8 @@ SubtypingOmicsData(
 }
 \arguments{
 \item{dataList}{a list of data matrices. Each matrix represents a data type where the rows are items and the columns are features. The matrices must have the same set of items.}
+
+\item{kMin}{The minimum number of clusters. Default value is \code{2}.}
 
 \item{kMax}{the maximum number of clusters. Default value is \code{5}.}
 

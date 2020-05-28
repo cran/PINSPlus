@@ -3,6 +3,7 @@
 #' 
 #' @param dataList a list of data matrices. Each matrix represents a data type where the rows are items and the columns are features. The matrices must have the same set of items.
 #' @param kMax the maximum number of clusters. Default value is \code{5}.
+#' @param kMin The minimum number of clusters. Default value is \code{2}.
 #' @param agreementCutoff agreement threshold to be considered consistent. Default value is \code{0.5}.
 #' @param ncore Number of cores that the algorithm should use. Default value is \code{1}.
 #' @param verbose set it to \code{TRUE} of \code{FALSE} to get more or less details respectively.
@@ -96,7 +97,7 @@
 #' @importFrom FNN knnx.index
 #' @importFrom entropy entropy
 #' @export
-SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, ncore = 1, verbose = T, ...) {
+SubtypingOmicsData <- function (dataList, kMin = 2, kMax = 5, agreementCutoff = 0.5, ncore = 1, verbose = T, ...) {
     now = Sys.time()
     
     # defined log function
@@ -119,10 +120,10 @@ SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, ncore
         dataList <- dataListTrain
     }
     
-    runPerturbationClustering <- function(dataList, kMax, stage = 1, forceSplit = FALSE){
+    runPerturbationClustering <- function(dataList, kMin, kMax, stage = 1, forceSplit = FALSE){
         dataTypeResult <- lapply(dataList, function(data) {
             set.seed(seed)
-            PerturbationClustering(data, kMax, ncore = ncore, verbose = verbose,...)
+            PerturbationClustering(data, kMin, kMax, ncore = ncore, verbose = verbose,...)
         })
         origList <- lapply(dataTypeResult, function(r) r$origS[[r$k]])
         orig = Reduce('+', origList)/length(origList)
@@ -145,7 +146,7 @@ SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, ncore
         list(dataTypeResult = dataTypeResult, orig = orig, pert = pert, PW = PW, groups = groups, agreement = agreement)
     }
     
-    pResult <- runPerturbationClustering(dataList, kMax)
+    pResult <- runPerturbationClustering(dataList, kMin, kMax)
     
     groups <- pResult$groups
     groups2 <- NULL
@@ -156,7 +157,7 @@ SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, ncore
         for (g in sort(unique(groups))) {
             miniGroup <- names(groups[groups == g])
             if (length(miniGroup) > 30) {
-                groupsM <- runPerturbationClustering(dataList = lapply(dataList, function(d) d[miniGroup, ]), kMax = min(kMax, 5), stage = 2)$groups
+                groupsM <- runPerturbationClustering(dataList = lapply(dataList, function(d) d[miniGroup, ]), kMin = kMin, kMax = min(kMax, 5), stage = 2)$groups
                 if (!is.null(groupsM))
                     groups2[miniGroup] <- paste(g, groupsM, sep = "-")
             }
@@ -194,7 +195,7 @@ SubtypingOmicsData <- function (dataList, kMax = 5, agreementCutoff = 0.5, ncore
                 #this is just to make sure we don't split a group that is already very small
                 if (length(miniGroup) > 30) {
                     #this is to check if the data types in this group can be split
-                    groupsM <- runPerturbationClustering(dataList = lapply(dataList, function(d) d[miniGroup, ]), kMax = min(kMax, 5), stage = 2, forceSplit = T)$groups
+                    groupsM <- runPerturbationClustering(dataList = lapply(dataList, function(d) d[miniGroup, ]),kMin = kMin, kMax = min(kMax, 5), stage = 2, forceSplit = T)$groups
                     if (!is.null(groupsM))
                         groups2[miniGroup] <- paste(g, groupsM, sep = "-")
                 }
