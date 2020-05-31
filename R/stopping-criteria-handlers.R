@@ -1,10 +1,10 @@
-DiffDevianceStoppingHandler <- function(kMax, origS, iterMin = 20, iterMax = 200, madMin = 1e-03, msdMin = 1e-06, onExcute){
+DiffDevianceStoppingHandler <- function(kMin, kMax, origS, iterMin = 20, iterMax = 200, madMin = 1e-03, msdMin = 1e-06, onExcute){
     listAUC <- list()
     clistAUC <- list()
     isStop <- rep(F, kMax)
     isStop[1] <- T
     
-    for (k in 2:kMax) {
+    for (k in kMin:kMax) {
         listAUC[k] <- list(c())
         clistAUC[k] <- list(c())
     }

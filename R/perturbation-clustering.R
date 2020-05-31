@@ -284,21 +284,21 @@ PerturbationClustering <- function(data, kMin = 2, kMax = 5, verbose = T, ncore 
     origS <- origPartition$origS
 
     listAUC <- list()
-    for (k in 2:kMax){
+    for (k in kMin:kMax){
         listAUC[k] <- list(c()) 
     }
     # declare stopping criteria for Perturbed Similarity computing
-    stoppingCriteriaHandler <- DiffDevianceStoppingHandler(kMax = kMax, origS = origS, iterMin = iterMin, madMin = madMin, msdMin = msdMin, onExcute = function(k, AUCs){
+    stoppingCriteriaHandler <- DiffDevianceStoppingHandler(kMin = kMin, kMax = kMax, origS = origS, iterMin = iterMin, madMin = madMin, msdMin = msdMin, onExcute = function(k, AUCs){
         listAUC[[k]] <<- AUCs
     })
 
     log("\nBuilding perturbed connectivity matrices")
     set.seed(seed)
-    pertS <- GetPerturbedSimilarity(data = pca$x, clusRange = 2 : kMax, iterMax = iterMax, iterMin = iterMin, origS = origS,
+    pertS <- GetPerturbedSimilarity(data = pca$x, clusRange = kMin : kMax, iterMax = iterMax, iterMin = iterMin, origS = origS,
                                     clusteringAlgorithm = clusteringAlgorithm$fun, perturbedFunction = perturbationAlgorithm$fun,
                                     stoppingCriteriaHandler = stoppingCriteriaHandler,
                                     showProgress = verbose, ncore = ncore)
-    for (k in 2:kMax){
+    for (k in kMin:kMax){
         AUCs <- listAUC[[k]]
         pert <- matrix(0, nrow(data), nrow(data))
         for (i in 1:length(AUCs)){
@@ -308,10 +308,10 @@ PerturbationClustering <- function(data, kMin = 2, kMax = 5, verbose = T, ncore 
     }
 
     # get discrepancy message('Calculate discrepancy between original and perturbed connectivity matrices')
-    Discrepancy <- CalcPerturbedDiscrepancy(origS, pertS, clusRange = 2 : kMax)
+    Discrepancy <- CalcPerturbedDiscrepancy(origS, pertS, clusRange = kMin : kMax)
     
     Discrepancy$AUC = round(Discrepancy$AUC, digits = 4)#meanAUCs
-    clus <- min(which(Discrepancy$AUC == max(Discrepancy$AUC[2:kMax])))
+    clus <- min(which(Discrepancy$AUC == max(Discrepancy$AUC[kMin:kMax])))
     
     timediff = Sys.time() - now;
     log("Done in ", timediff, " ", units(timediff), ".\n")
@@ -362,25 +362,25 @@ PerturbationClustering <- function(data, kMin = 2, kMax = 5, verbose = T, ncore 
         # get the partitioning from simply clustering the real data, for consecutive k
         log("Building original connectivity matrices")
         set.seed(seed)
-        origPartition <- GetOriginalSimilarity(data = train, clusRange = 2 : kMax, clusteringAlgorithm = clusteringAlgorithm$fun, showProgress = verbose, ncore)
+        origPartition <- GetOriginalSimilarity(data = train, clusRange = kMin : kMax, clusteringAlgorithm = clusteringAlgorithm$fun, showProgress = verbose, ncore)
         origS <- origPartition$origS
         
         listAUC <- list()
-        for (k in 2:kMax){
+        for (k in kMin:kMax){
             listAUC[k] <- list(c()) 
         }
         # declare stopping criteria for Perturbed Similarity computing
-        stoppingCriteriaHandler <- DiffDevianceStoppingHandler(kMax = kMax, origS = origS, iterMin = iterMin, madMin = madMin, msdMin = msdMin, onExcute = function(k, AUCs){
+        stoppingCriteriaHandler <- DiffDevianceStoppingHandler(kMin = kMin, kMax = kMax, origS = origS, iterMin = iterMin, madMin = madMin, msdMin = msdMin, onExcute = function(k, AUCs){
             listAUC[[k]] <<- AUCs
         })
         
         log("Building perturbed connectivity matrices")
         set.seed(seed)
-        pertS <- GetPerturbedSimilarity(data = train, clusRange = 2 : kMax, iterMax = iterMax, iterMin = iterMin, origS = origS,
+        pertS <- GetPerturbedSimilarity(data = train, clusRange = kMin : kMax, iterMax = iterMax, iterMin = iterMin, origS = origS,
                                         clusteringAlgorithm = clusteringAlgorithm$fun, perturbedFunction = perturbationAlgorithm$fun,
                                         stoppingCriteriaHandler = stoppingCriteriaHandler,
                                         showProgress = verbose, ncore = ncore)
-        for (k in 2:kMax){
+        for (k in kMin:kMax){
             AUCs <- listAUC[[k]]
             pert <- matrix(0, nrow(train), nrow(train))
             for (i in 1:length(AUCs)){
@@ -390,10 +390,10 @@ PerturbationClustering <- function(data, kMin = 2, kMax = 5, verbose = T, ncore 
         }
         
         # get discrepancy message('Calculate discrepancy between original and perturbed connectivity matrices')
-        Discrepancy <- CalcPerturbedDiscrepancy(origS, pertS, clusRange = 2 : kMax)
+        Discrepancy <- CalcPerturbedDiscrepancy(origS, pertS, clusRange = kMin : kMax)
         
         Discrepancy$AUC = round(Discrepancy$AUC, digits = 4)#meanAUCs
-        clus <- min(which(Discrepancy$AUC == max(Discrepancy$AUC[2:kMax])))
+        clus <- min(which(Discrepancy$AUC == max(Discrepancy$AUC[kMin:kMax])))
         
         cluster.train <- origPartition$groupings[[clus]]
         
