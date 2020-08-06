@@ -8,6 +8,7 @@ SubtypingOmicsData(
   dataList,
   kMin = 2,
   kMax = 5,
+  k = NULL,
   agreementCutoff = 0.5,
   ncore = 1,
   verbose = T,
@@ -17,9 +18,11 @@ SubtypingOmicsData(
 \arguments{
 \item{dataList}{a list of data matrices. Each matrix represents a data type where the rows are items and the columns are features. The matrices must have the same set of items.}
 
-\item{kMin}{The minimum number of clusters. Default value is \code{2}.}
+\item{kMin}{The minimum number of clusters used for automatically detecting the number of clusters in \code{PerturbationClustering}. This paramter is passed to \code{PerturbationClustering} and does not affect the final number of cluster in \code{SubtypingOmicsData}. Default value is \code{2}.}
 
-\item{kMax}{the maximum number of clusters. Default value is \code{5}.}
+\item{kMax}{The maximum number of clusters used for automatically detecting the number of clusters in \code{PerturbationClustering}. This paramter is passed to \code{PerturbationClustering} and does not affect the final number of cluster in \code{SubtypingOmicsData}. Default value is \code{5}.}
+
+\item{k}{The number of clusters. If k is set then kMin and kMax will be ignored.}
 
 \item{agreementCutoff}{agreement threshold to be considered consistent. Default value is \code{0.5}.}
 

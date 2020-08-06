@@ -19,6 +19,6 @@
 }
 \source{\url{https://wiki.cancerimagingarchive.net/display/Public/TCGA-KIRC}}
 \references{
-    Akin, O., Elnajjar, P., Heller, M., Jarosz, R., Erickson, B. J., Kirk, S., ... Filippini, J. (2016). Radiology Data from The Cancer Genome Atlas Kidney Renal Clear Cell Carcinoma [TCGA-KIRC] collection. The Cancer Imaging Archive. \url{http://doi.org/10.7937/K9/TCIA.2016.V6PBVTDR}
+    Akin, O., Elnajjar, P., Heller, M., Jarosz, R., Erickson, B. J., Kirk, S., ... Filippini, J. (2016). Radiology Data from The Cancer Genome Atlas Kidney Renal Clear Cell Carcinoma [TCGA-KIRC] collection. The Cancer Imaging Archive.
 }
 \keyword{datasets}

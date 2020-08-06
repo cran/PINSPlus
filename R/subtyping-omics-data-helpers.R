@@ -28,34 +28,47 @@ CalcClusterAgreement <- function(l) {
     ret
 }
 
-ClusteringFunWrapper <- function(kMax, groupings, FUN){
+ClusteringFunWrapper <- function(kMax, groupings, FUN, k = NULL){
     clusters = list()
     
-    agreeS <- lapply(2 : kMax, FUN = function(i){
-        cluster = FUN(i)
-        clusters[[i]] <<- cluster
+    if (is.null(k)){
+        agreeS <- lapply(2 : kMax, FUN = function(i){
+            cluster = FUN(i)
+            clusters[[i]] <<- cluster
+            
+            CalcClusterAgreement(
+                c(
+                    groupings,
+                    list(cluster)
+                )
+            )
+        })
         
-        CalcClusterAgreement(
+        ret <- list()
+        ret$agreeS <- unlist(agreeS)
+        ret$k <- which.max(agreeS) + 1
+        ret$agree <- ret$agreeS[ret$k - 1]
+        ret$cluster <- clusters[[ret$k]]
+        return(ret)
+    } else {
+        ret <- list()
+        ret$k = k
+        ret$cluster <- FUN(k)
+        ret$agree <- CalcClusterAgreement(
             c(
                 groupings,
-                list(cluster)
+                list(ret$cluster)
             )
         )
-    })
-    
-    ret <- list()
-    ret$agreeS <- unlist(agreeS)
-    ret$k <- which.max(agreeS) + 1
-    ret$agree <- ret$agreeS[ret$k - 1]
-    ret$cluster <- clusters[[ret$k]]
-    ret
+        return(ret)
+    }
 }
 
-ClusterUsingPAM <- function(orig, kMax, groupings) {
-    ClusteringFunWrapper(kMax, groupings, FUN = function(k) pamWrapper(1 - orig, k, diss = T))
+ClusterUsingPAM <- function(orig, kMax, groupings, k = NULL) {
+    ClusteringFunWrapper(kMax, groupings, FUN = function(k) pamWrapper(1 - orig, k, diss = T), k)
 }
 
-ClusterUsingHierarchical <- function(orig, kMax, groupings) {
+ClusterUsingHierarchical <- function(orig, kMax, groupings, k = NULL) {
     hcO <- hclust(as.dist(1 - orig), method = "average")
-    ClusteringFunWrapper(kMax, groupings, FUN = function(k) cutree(hcO, k))
+    ClusteringFunWrapper(kMax, groupings, FUN = function(k) cutree(hcO, k), k)
 }

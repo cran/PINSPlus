@@ -8,6 +8,7 @@ PerturbationClustering(
   data,
   kMin = 2,
   kMax = 5,
+  k = NULL,
   verbose = T,
   ncore = 1,
   clusteringMethod = "kmeans",
@@ -26,9 +27,11 @@ PerturbationClustering(
 \arguments{
 \item{data}{Input matrix. The rows represent items while the columns represent features.}
 
-\item{kMin}{The minimum number of clusters. Default value is \code{2}.}
+\item{kMin}{The minimum number of clusters used for automatically detecting the number of clusters. Default value is \code{2}.}
 
-\item{kMax}{The maximum number of clusters. The algorithm runs from \code{k = 2} to \code{k = kMax}. Default value is \code{5}.}
+\item{kMax}{The maximum number of clusters used for automatically detecting the number of clusters. Default value is \code{5}.}
+
+\item{k}{The number of clusters. If k is set then kMin and kMax will be ignored.}
 
 \item{verbose}{Boolean value indicating the algorithm to run with or without logging. Default value is \code{TRUE}.}
 
