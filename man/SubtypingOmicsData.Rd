@@ -12,6 +12,8 @@ SubtypingOmicsData(
   agreementCutoff = 0.5,
   ncore = 1,
   verbose = T,
+  sampledSetSize = 2000,
+  knn.k = NULL,
   ...
 )
 }
@@ -30,6 +32,10 @@ SubtypingOmicsData(
 
 \item{verbose}{set it to \code{TRUE} of \code{FALSE} to get more or less details respectively.}
 
+\item{sampledSetSize}{The number of sample size used for the sampling process when dataset is big. Default value is \code{2000}.}
+
+\item{knn.k}{The value of k of the k-nearest neighbors algorithm. If knn.k is not set then it will be used elbow method to calculate the k.}
+
 \item{...}{these arguments will be passed to \code{PerturbationClustering} algorithm. See details for more information}
 }
 \value{
@@ -42,7 +48,7 @@ SubtypingOmicsData(
 Perform subtyping using multiple types of data
 }
 \details{
-\code{SubtypingOmicsData} implements the Subtyping multi-omic data that are based on Perturbaion clustering algorithm of Nguyen, et al (2017) and Nguyen, et al (2019).
+\code{SubtypingOmicsData} implements the Subtyping multi-omic data that are based on Perturbaion clustering algorithm of Nguyen et al (2017), Nguyen et al (2019) and Nguyen, et al. (2021).
 The input is  a list of data matrices where each matrix represents the molecular measurements of a data type. The input matrices must have the same number of rows. 
 \code{SubtypingOmicsData} aims to find the optimum number of subtypes and location of each sample in the clusters from integrated input data \code{dataList} through two processing stages:
 
@@ -52,6 +58,8 @@ Both kmeans and similarity-based clustering algorithms - partitioning around med
 The algorithm returns the partitioning that agrees the most with individual data types.\cr
 2. Stage II: The algorithm attempts to split each discovered group if there is a strong agreement between data types,
 or if the subtyping in Stage I is very unbalanced.
+
+When clustering a large number of samples, this function uses a subsampling technique to reduce the computational complexity with the two parameters \code{sampledSetSize} and \code{knn.k}. Please consult Nguyen et al. (2021) for details.
 }
 \examples{
 \donttest{
@@ -114,6 +122,8 @@ legend(
 2. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
 
 3. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
+
+4. H Nguyen, D Tran, B Tran, M Roy, A Cassell, S Dascalu, S Draghici & T Nguyen. SMRT: Randomized Data Transformation for Cancer Subtyping and Big Data Analysis. Frontiers in oncology. 2021.
 }
 \seealso{
 \code{\link{PerturbationClustering}}

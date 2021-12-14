@@ -1,21 +1,21 @@
-## ----message=FALSE------------------------------------------------------------
+## ----message=FALSE-------------------------------------------------------
 library(PINSPlus)
 data(AML2004)
 data <- as.matrix(AML2004$Gene)
 
-## -----------------------------------------------------------------------------
+## ------------------------------------------------------------------------
 system.time(result <- PerturbationClustering(data = data, verbose = FALSE))
 
-## ---- eval=FALSE--------------------------------------------------------------
+## ---- eval=FALSE---------------------------------------------------------
 #  result <- PerturbationClustering(data = data)
 
-## -----------------------------------------------------------------------------
+## ------------------------------------------------------------------------
 result$k
 
-## -----------------------------------------------------------------------------
+## ------------------------------------------------------------------------
 result$cluster
 
-## -----------------------------------------------------------------------------
+## ------------------------------------------------------------------------
 condition <- seq(unique(AML2004$Group[, 2]))
 names(condition) = unique(AML2004$Group[, 2])
 plot(prcomp(AML2004$Gene)$x, col = result$cluster, 
@@ -24,19 +24,19 @@ legend("bottomright", legend = paste("Cluster ", sort(unique(result$cluster)), s
         fill = sort(unique(result$cluster)))
 legend("bottomleft", legend = names(condition), pch = condition)
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- PerturbationClustering(data = data, kMax = 5,
 #                                   clusteringMethod = "kmeans")
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- PerturbationClustering(data = data, kMax = 5,
 #                                   clusteringMethod = "pam")
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- PerturbationClustering(data = data, kMax = 5,
 #                                   clusteringMethod = "hclust")
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- PerturbationClustering(
 #      data = data,
 #      clusteringMethod = "kmeans",
@@ -44,29 +44,29 @@ legend("bottomleft", legend = names(condition), pch = condition)
 #      verbose = FALSE
 #  )
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- PerturbationClustering(data = data,
 #      clusteringFunction = function(data, k){
 #      # this function must return a vector of cluster
 #      kmeans(x = data, centers = k, nstart = k*10, iter.max = 2000)$cluster
 #  })
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- PerturbationClustering(data = data,
 #                                   perturbMethod = "noise",
 #                                   perturbOptions = list(noise = 1.23))
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- PerturbationClustering(data = data,
 #                                   perturbMethod = "noise",
 #                                   perturbOptions = list(noisePercent = 10))
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- PerturbationClustering(data = data,
 #                                   perturbMethod = "subsampling",
 #                                   perturbOptions = list(percent = 80))
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- PerturbationClustering(data = data, perturbFunction = function(data){
 #      rowNum <- nrow(data)
 #      colNum <- ncol(data)
@@ -84,7 +84,7 @@ legend("bottomleft", legend = names(condition), pch = condition)
 #      )
 #  })
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  sampleNum <- 50000 # Number of samples
 #  geneNum <- 5000 # Number of genes
 #  subtypeNum <- 3 # Number of subtypes
@@ -107,28 +107,28 @@ legend("bottomleft", legend = names(condition), pch = condition)
 #  exprs.pca <- irlba::prcomp_irlba(exprs, n = 2)$x
 #  plot(exprs.pca, main = "PCA")
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  set.seed(1)
 #  t1 <- Sys.time()
 #  result <- PerturbationClustering(data = exprs.pca, ncore = 1)
 #  t2 <- Sys.time()
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  t2-t1
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result$k
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  subtype <- result$cluster
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  if (!require("mclust")) install.packages("mclust")
 #  library(mclust)
 #  ari <- mclust::adjustedRandIndex(subtype, group)
 #  
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  
 #  colors <- as.numeric(as.character(factor(subtype)))
 #  
@@ -142,7 +142,7 @@ legend("bottomleft", legend = names(condition), pch = condition)
 #                     table(subtype)[levels(factor(subtype))], sep = "" )
 #      )
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  # Load the kidney cancer carcinoma data
 #  data(KIRC)
 #  # SubtypingOmicsData`'s input data must be a list of
@@ -152,14 +152,14 @@ legend("bottomleft", legend = names(condition), pch = condition)
 #  # Run `SubtypingOmicsData`:
 #  result <- SubtypingOmicsData(dataList = dataList)
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  result <- SubtypingOmicsData(
 #      dataList = dataList,
 #      clusteringMethod = "kmeans",
 #      clusteringOptions = list(nstart = 50)
 #  )
 
-## ----eval=FALSE---------------------------------------------------------------
+## ----eval=FALSE----------------------------------------------------------
 #  library(survival)
 #  cluster1=result$cluster1;cluster2=result$cluster2
 #  a <- intersect(unique(cluster2), unique(cluster1))

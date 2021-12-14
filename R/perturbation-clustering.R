@@ -18,9 +18,11 @@
 #' @param iterMax The maximum number of iterations. Default value is \code{200}.
 #' @param madMin The minimum of Mean Absolute Deviation of \code{AUC} of Connectivity matrix for each \code{k}. Default value is \code{1e-03}.
 #' @param msdMin The minimum of Mean Square Deviation of \code{AUC} of Connectivity matrix for each \code{k}. Default value is \code{1e-06}.
+#' @param sampledSetSize The number of sample size used for the sampling process when dataset is big. Default value is \code{2000}.
+#' @param knn.k The value of k of the k-nearest neighbors algorithm. If knn.k is not set then it will be used the elbow method to calculate k.
 #
 #' @details
-#' PerturbationClustering implements the Perturbation Clustering algorithm of Nguyen, et al (2017) and Nguyen, et al (2019).
+#' PerturbationClustering implements the Perturbation Clustering algorithm of Nguyen et al. (2017),  Nguyen et al. (2019), and Nguyen et al. (2021).
 #' It aims to determine the optimum cluster number and location of each sample in the clusters in an unsupervised analysis.
 #' 
 #' PerturbationClustering takes input as a numerical matrix or data frame of items as rows and features as columns.
@@ -60,6 +62,8 @@
 #' \code{k} is the cluster number and \code{iter} is the current number of iteration.
 #' This function must returns a connectivity matrix that is merged from \code{oldMatrix} and \code{newMatrix}
 #' 
+#' The parameters \code{sampledSetSize} and \code{knn.k} are used for subsampling procedure when clustering big data. Please consult Nguyen et al. (2021) for details.
+#' 
 #' @return
 #' \code{PerturbationClustering} returns a list with at least the following components:
 #' \item{k}{The optimal number of clusters}
@@ -75,6 +79,8 @@
 #' 2. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
 #' 
 #' 3. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
+#' 
+#' 4. H Nguyen, D Tran, B Tran, M Roy, A Cassell, S Dascalu, S Draghici & T Nguyen. SMRT: Randomized Data Transformation for Cancer Subtyping and Big Data Analysis. Frontiers in oncology. 2021.
 #' 
 #' @seealso \code{\link{kmeans}}, \code{\link{pam}}
 #' 
@@ -240,14 +246,16 @@
 #' @importFrom cluster pam
 #' @importFrom irlba prcomp_irlba
 #' @importFrom mclust adjustedRandIndex
+#' @importFrom impute impute.knn
 #' @export
 PerturbationClustering <- function(data, kMin = 2, kMax = 5, k = NULL, verbose = T, ncore = 1, # Algorithm args
                                    clusteringMethod = "kmeans", clusteringFunction = NULL, clusteringOptions = NULL, # Based clustering algorithm args
                                    perturbMethod = "noise", perturbFunction = NULL, perturbOptions = NULL, # Perturbed function args
-                                   PCAFunction = NULL, iterMin = 20, iterMax = 200, madMin = 1e-03, msdMin = 1e-06# Stopping condition for generating perturbation matrix
+                                   PCAFunction = NULL, iterMin = 20, iterMax = 200, madMin = 1e-03, msdMin = 1e-06, # Stopping condition for generating perturbation matrix
+                                   sampledSetSize = 2000, knn.k = NULL
 ) {
     RcppParallel::setThreadOptions(ncore)
-    if(nrow(data) <= 2000){
+    if(nrow(data) <= sampledSetSize){
         now = Sys.time()
         
         # defined log function
@@ -342,7 +350,7 @@ PerturbationClustering <- function(data, kMin = 2, kMax = 5, k = NULL, verbose =
         now = Sys.time()
         names <- rownames(data)
         set.seed(1)
-        ind <- sample.int(nrow(data),2000)
+        ind <- sample.int(nrow(data), sampledSetSize)
         
         train <- data[ind, ]
         test <- data[-ind, , drop=F]
@@ -423,7 +431,7 @@ PerturbationClustering <- function(data, kMin = 2, kMax = 5, k = NULL, verbose =
             cluster.train <- origPartition$groupings[[clus]]
         }
 
-        cluster.test <- as.integer(FNN::knn(train, test, cluster.train, k = 10))
+        cluster.test <- as.integer(classify(train, cluster.train, test, knn.k))
         
         cluster <- rep(0, nrow(data))
         cluster[ind] <- cluster.train

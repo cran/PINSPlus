@@ -8,11 +8,13 @@
 #' @param agreementCutoff agreement threshold to be considered consistent. Default value is \code{0.5}.
 #' @param ncore Number of cores that the algorithm should use. Default value is \code{1}.
 #' @param verbose set it to \code{TRUE} of \code{FALSE} to get more or less details respectively.
+#' @param sampledSetSize The number of sample size used for the sampling process when dataset is big. Default value is \code{2000}.
+#' @param knn.k The value of k of the k-nearest neighbors algorithm. If knn.k is not set then it will be used elbow method to calculate the k.
 #' @param ... these arguments will be passed to \code{PerturbationClustering} algorithm. See details for more information
 #' 
 #' @details
 #' 
-#' \code{SubtypingOmicsData} implements the Subtyping multi-omic data that are based on Perturbaion clustering algorithm of Nguyen, et al (2017) and Nguyen, et al (2019).
+#' \code{SubtypingOmicsData} implements the Subtyping multi-omic data that are based on Perturbaion clustering algorithm of Nguyen et al (2017), Nguyen et al (2019) and Nguyen, et al. (2021).
 #' The input is  a list of data matrices where each matrix represents the molecular measurements of a data type. The input matrices must have the same number of rows. 
 #' \code{SubtypingOmicsData} aims to find the optimum number of subtypes and location of each sample in the clusters from integrated input data \code{dataList} through two processing stages:
 #' 
@@ -22,6 +24,8 @@
 #' The algorithm returns the partitioning that agrees the most with individual data types.\cr
 #' 2. Stage II: The algorithm attempts to split each discovered group if there is a strong agreement between data types,
 #' or if the subtyping in Stage I is very unbalanced.
+#' 
+#' When clustering a large number of samples, this function uses a subsampling technique to reduce the computational complexity with the two parameters \code{sampledSetSize} and \code{knn.k}. Please consult Nguyen et al. (2021) for details.
 #'
 #' @return
 #' 
@@ -38,6 +42,8 @@
 #' 2. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
 #' 
 #' 3. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
+#' 
+#' 4. H Nguyen, D Tran, B Tran, M Roy, A Cassell, S Dascalu, S Draghici & T Nguyen. SMRT: Randomized Data Transformation for Cancer Subtyping and Big Data Analysis. Frontiers in oncology. 2021.
 #' 
 #' @seealso \code{\link{PerturbationClustering}}
 #' 
@@ -97,8 +103,9 @@
 #' }
 #' @importFrom FNN knnx.index
 #' @importFrom entropy entropy
+#' @importFrom impute impute.knn
 #' @export
-SubtypingOmicsData <- function (dataList, kMin = 2, kMax = 5, k = NULL, agreementCutoff = 0.5, ncore = 1, verbose = T, ...) {
+SubtypingOmicsData <- function (dataList, kMin = 2, kMax = 5, k = NULL, agreementCutoff = 0.5, ncore = 1, verbose = T, sampledSetSize = 2000, knn.k = NULL, ...) {
     now = Sys.time()
     
     # defined log function
@@ -107,14 +114,28 @@ SubtypingOmicsData <- function (dataList, kMin = 2, kMax = 5, k = NULL, agreemen
         flush.console()
     }
     
+    dataListComplete <- dataList
+    commonSamples <- Reduce(f = intersect, x = lapply(dataList, rownames))
+    dataList <- lapply(dataList, function(d) d[commonSamples, ])
+    
+    notCommonData <- lapply(dataListComplete, function(d) {
+        
+        rn <- rownames(d)[(!rownames(d) %in% commonSamples)]
+        d <- matrix(d[rn, ], ncol = ncol(d))
+        rownames(d) <- rn
+        d
+    })
+    
     dataListTrain <- NULL
     dataListTest <- NULL
     
     seed = round(rnorm(1)*10^6)
     
-    if (nrow(dataList[[1]]) > 2000) {
+    dataList <- lapply(dataList, as.data.frame)
+    
+    if (nrow(dataList[[1]]) > sampledSetSize) {
         n_samples <- nrow(dataList[[1]])
-        ind <- sample.int(n_samples, size = 2000)
+        ind <- sample.int(n_samples, size = sampledSetSize)
         dataListTrain <- lapply(dataList, function(x) x[ind, ])
         dataListTest <- lapply(dataList, function(x) x[-ind, , drop=F])
         
@@ -124,15 +145,57 @@ SubtypingOmicsData <- function (dataList, kMin = 2, kMax = 5, k = NULL, agreemen
     runPerturbationClustering <- function(dataList, kMin, kMax, stage = 1, forceSplit = FALSE, k = NULL){
         dataTypeResult <- lapply(dataList, function(data) {
             set.seed(seed)
+            data <- as.matrix(data)
+            data <- data[rowSums(is.na(data)) == 0, ]
             PerturbationClustering(data, kMin, kMax, ncore = ncore, verbose = verbose,...)
         })
         
+        # origList <- lapply(dataTypeResult, function(r) r$origS[[r$k]])
+        # orig = Reduce('+', origList)/length(origList)
+        # PW = Reduce('*', origList)
+        # agreement = (sum(orig == 0) + sum(orig == 1) - nrow(orig)) / (nrow(orig) ^ 2 - nrow(orig))
+        # 
+        # pert =  Reduce('+', lapply(dataTypeResult, function(r) r$pertS[[r$k]]))/length(dataList)
+        
+        allSamples <- unique(unlist(lapply(dataList, rownames)))
+        
         origList <- lapply(dataTypeResult, function(r) r$origS[[r$k]])
-        orig = Reduce('+', origList)/length(origList)
-        PW = Reduce('*', origList)
+        
+        origMerged <- do.call(
+            what = rbind,
+            args = lapply(origList, function(o){
+                o <- as.data.frame(o)
+                as.numeric(as.matrix(t(as.data.frame(t(o[allSamples, ]))[allSamples, ])))
+            })
+        )
+        
+        orig = matrix(colMeans(origMerged, na.rm = T), nrow = length(allSamples))
+        rownames(orig) <- colnames(orig) <- allSamples
+        
+        orig <- impute::impute.knn(orig)$data
+        
+        orig[is.na(orig)] <- 0
+        
+        PW = matrix(as.numeric(colSums(origMerged == 0, na.rm = T) == 0), nrow = length(allSamples))
+        rownames(PW) <- colnames(PW) <- allSamples
+        
         agreement = (sum(orig == 0) + sum(orig == 1) - nrow(orig)) / (nrow(orig) ^ 2 - nrow(orig))
         
-        pert =  Reduce('+', lapply(dataTypeResult, function(r) r$pertS[[r$k]]))/length(dataList)
+        pertList <- lapply(dataTypeResult, function(r) r$pertS[[r$k]])
+        pertMerged <- do.call(
+            what = rbind,
+            args = lapply(pertList, function(p){
+                p <- as.data.frame(p)
+                as.numeric(as.matrix(t(as.data.frame(t(p[allSamples, ]))[allSamples, ])))
+            })
+        )
+        
+        pert = matrix(colMeans(pertMerged, na.rm = T), nrow = length(allSamples))
+        rownames(pert) <- colnames(pert) <- allSamples
+        
+        pert <- impute::impute.knn(pert)$data
+        
+        pert[is.na(pert)] <- 0
         
         groups <- NULL
         
@@ -204,7 +267,7 @@ SubtypingOmicsData <- function (dataList, kMin = 2, kMax = 5, k = NULL, agreemen
             }
             
             # now after further splitting, the number of groups can be > k
-            # need to merge cluster based on their aggrement
+            # need to merge cluster based on their agreement
             agreements.unique = unique(agreements)
             for (aggr in sort(unique(agreements))){
                 if (length(unique(groups2)) == k) break()
@@ -288,7 +351,7 @@ SubtypingOmicsData <- function (dataList, kMin = 2, kMax = 5, k = NULL, agreemen
                 
                 # split like normal using entropy
                 normalizedEntropy = entropy::entropy(table(groups)) / log(length(unique(groups)), exp(1))
-
+                
                 agreements <- rep(1, length(groups))
                 names(agreements) <- names(groups)
                 
@@ -368,64 +431,152 @@ SubtypingOmicsData <- function (dataList, kMin = 2, kMax = 5, k = NULL, agreemen
         }
     }
     
-    train_y <- groups
-    train_y2 <- groups2
-    
-    if(!is.null(dataListTest)) {
-        set.seed(seed)
-        RcppParallel::setThreadOptions(ncore)
+    {
+        train_y <- groups
+        train_y2 <- groups2
         
-        test_prob <- matrix(0, nrow = n_samples - 2000, ncol = length(unique(groups)))
-        if(!is.null(train_y2))
-        {
-            test_prob2 <- matrix(0, nrow = n_samples - 2000, ncol = length(unique(groups2)))
+        if(!is.null(dataListTest)) {
+            set.seed(seed)
+            RcppParallel::setThreadOptions(ncore)
+            
+            test_prob <- matrix(0, nrow = n_samples - sampledSetSize, ncol = length(unique(groups)))
+            if(!is.null(train_y2))
+            {
+                test_prob2 <- matrix(0, nrow = n_samples - sampledSetSize, ncol = length(unique(groups2)))
+            }
+            
+            for (i in 1:length(dataListTrain)) {
+                train <- dataListTrain[[i]]
+                test <- dataListTest[[i]]
+                
+                if(ncol(train)*nrow(train) > 2e7) {
+                    pca <- pResult$dataTypeResult[[i]]$pca
+                } else {
+                    pca <- rpca.para(train, min(nrow(data), 20), scale = F)
+                }
+                
+                train <- pca$x
+                test <- predict.rpca.para(pca, test)
+                
+                test_prob <- test_prob + classifierProb(train, groups, test, knn.k)
+                
+                if(!is.null(train_y2)){
+                    test_prob2 <- test_prob2 + classifierProb(train, groups2, test, knn.k)
+                }
+                
+                # nn_index <- FNN::knnx.index(train, test, k = 10)
+                # nn_group <- matrix(train_y[nn_index], ncol = 10)
+                # 
+                # for (j in 1:nrow(test_prob)) {
+                #     tmp <- table(nn_group[j, ])
+                #     test_prob[j, as.numeric(names(tmp))] <- test_prob[j, as.numeric(names(tmp))] + as.numeric(tmp)/10
+                # }
+                # 
+                # if(!is.null(train_y2))
+                # {
+                #     nn_group2 <- matrix(train_y2[nn_index], ncol = 10)
+                #     
+                #     for (j in 1:nrow(test_prob)) {
+                #         tmp <- table(nn_group2[j, ])
+                #         test_prob2[j, as.numeric(names(tmp))] <- test_prob2[j, as.numeric(names(tmp))] + as.numeric(tmp)/10
+                #     }
+                # }
+                
+            }
+            
+            test_y <- apply(test_prob, 1, which.max)
+            
+            groups <- rep(0, n_samples)
+            groups[ind] <- train_y
+            groups[-ind] <- test_y
+            
+            if(!is.null(train_y2)) {
+                test_y2 <- apply(test_prob2, 1, which.max)
+                groups2 <- rep(0, n_samples)
+                groups2[ind] <- train_y2
+                groups2[-ind] <- test_y2
+            }
         }
-        for (i in 1:length(dataListTrain)) {
-            train <- dataListTrain[[i]]
-            test <- dataListTest[[i]]
+    }
+    
+    # for not common data
+    {
+        # if data is big, now groups include the testing
+        train_y <- groups
+        train_y2 <- groups2
+        
+        allSamples <- unique(unlist(lapply(dataListComplete, rownames)))
+        n_samples <- length(allSamples)
+        
+        notCommonSamples <- allSamples[!(allSamples %in% commonSamples)]
+        
+        if(length(allSamples) > length(commonSamples)) {
+            set.seed(seed)
+            RcppParallel::setThreadOptions(ncore)
             
-            if(ncol(train)*nrow(train) > 2e7) {
-                pca <- pResult$dataTypeResult[[i]]$pca
+            # if dataListTrain is not null this means the data is big
+            if (!is.null(dataListTrain)){
+                dataListTrain <- lapply(1:length(dataList), function(i){
+                    as.matrix(rbind(dataList[[i]], dataListTrain[[i]]))
+                })
             } else {
-                pca <- rpca.para(train, min(nrow(data), 20), scale = F)
+                dataListTrain <- dataList
             }
-
-            train <- pca$x
-            test <- predict.rpca.para(pca, test)
             
-            nn_index <- FNN::knnx.index(train, test, k = 10)
+            dataListTest <- notCommonData
             
-            nn_group <- matrix(train_y[nn_index], ncol = 10)
-            
-            for (j in 1:nrow(test_prob)) {
-                tmp <- table(nn_group[j, ])
-                test_prob[j, as.numeric(names(tmp))] <- test_prob[j, as.numeric(names(tmp))] + as.numeric(tmp)/10
-            }
+            test_prob <- matrix(0, nrow = length(notCommonSamples), ncol = length(unique(groups)))
+            rownames(test_prob) <- notCommonSamples
+            colnames(test_prob) <- unique(groups)
             
             if(!is.null(train_y2))
             {
-                nn_group2 <- matrix(train_y2[nn_index], ncol = 10)
+                test_prob2 <- matrix(0, nrow = length(notCommonSamples), ncol = length(unique(groups2)))
+                rownames(test_prob2) <- notCommonSamples
+                colnames(test_prob2) <- unique(groups2)
+            }
+            
+            for (i in 1:length(dataListTrain)) {
+                train <- dataListTrain[[i]]
+                test <- dataListTest[[i]]
                 
-                for (j in 1:nrow(test_prob)) {
-                    tmp <- table(nn_group2[j, ])
-                    test_prob2[j, as.numeric(names(tmp))] <- test_prob2[j, as.numeric(names(tmp))] + as.numeric(tmp)/10
+                if (nrow(test) == 0) next()
+                
+                pca <- rpca.para(train, min(nrow(train), 20), scale = F)
+                train <- pca$x
+                test <- predict.rpca.para(pca, test)
+                
+                test_prob_tmp <- classifierProb(train, groups, test, knn.k)
+                
+                test_prob[rownames(test_prob_tmp), ] <- test_prob[rownames(test_prob_tmp), ] + test_prob_tmp
+                
+                if(!is.null(train_y2)){
+                    test_prob_tmp2 <- classifierProb(train, groups2, test, knn.k)
+                    test_prob2[rownames(test_prob_tmp2), ] <- test_prob2[rownames(test_prob_tmp2), ] + test_prob_tmp2
                 }
             }
-        }
-        
-        test_y <- apply(test_prob, 1, which.max)
-        
-        groups <- rep(0, n_samples)
-        groups[ind] <- train_y
-        groups[-ind] <- test_y
-        
-        if(!is.null(train_y2)) {
-            test_y2 <- apply(test_prob2, 1, which.max)
-            groups2 <- rep(0, n_samples)
-            groups2[ind] <- train_y2
-            groups2[-ind] <- test_y2
+            
+            
+            test_y <- colnames(test_prob)[apply(test_prob, 1, which.max)]
+         
+            groups <- rep(0, n_samples)
+            names(groups) <- allSamples
+            
+            groups[commonSamples] <- train_y
+            groups[notCommonSamples] <- test_y
+            
+            if(!is.null(train_y2)) {
+                test_y2 <- colnames(test_prob2)[apply(test_prob2, 1, which.max)]
+                groups2 <- rep(0, n_samples)
+                
+                names(groups2) <- allSamples
+                
+                groups2[commonSamples] <- train_y2
+                groups2[notCommonSamples] <- test_y2
+            }
         }
     }
+    
     
     timediff = Sys.time() - now;
     mlog("Done in ", timediff, " ", units(timediff), ".\n")

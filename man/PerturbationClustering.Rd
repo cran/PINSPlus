@@ -21,7 +21,9 @@ PerturbationClustering(
   iterMin = 20,
   iterMax = 200,
   madMin = 0.001,
-  msdMin = 1e-06
+  msdMin = 1e-06,
+  sampledSetSize = 2000,
+  knn.k = NULL
 )
 }
 \arguments{
@@ -58,6 +60,10 @@ PerturbationClustering(
 \item{madMin}{The minimum of Mean Absolute Deviation of \code{AUC} of Connectivity matrix for each \code{k}. Default value is \code{1e-03}.}
 
 \item{msdMin}{The minimum of Mean Square Deviation of \code{AUC} of Connectivity matrix for each \code{k}. Default value is \code{1e-06}.}
+
+\item{sampledSetSize}{The number of sample size used for the sampling process when dataset is big. Default value is \code{2000}.}
+
+\item{knn.k}{The value of k of the k-nearest neighbors algorithm. If knn.k is not set then it will be used the elbow method to calculate k.}
 }
 \value{
 \code{PerturbationClustering} returns a list with at least the following components:
@@ -70,7 +76,7 @@ PerturbationClustering(
 Perform subtyping using one type of high-dimensional data
 }
 \details{
-PerturbationClustering implements the Perturbation Clustering algorithm of Nguyen, et al (2017) and Nguyen, et al (2019).
+PerturbationClustering implements the Perturbation Clustering algorithm of Nguyen et al. (2017),  Nguyen et al. (2019), and Nguyen et al. (2021).
 It aims to determine the optimum cluster number and location of each sample in the clusters in an unsupervised analysis.
 
 PerturbationClustering takes input as a numerical matrix or data frame of items as rows and features as columns.
@@ -109,6 +115,8 @@ This function aims to correct the \code{connectivityMatrix} if needed and return
 The \code{oldMatrix} and \code{newMatrix} are two connectivity matrices that need to be merged,
 \code{k} is the cluster number and \code{iter} is the current number of iteration.
 This function must returns a connectivity matrix that is merged from \code{oldMatrix} and \code{newMatrix}
+
+The parameters \code{sampledSetSize} and \code{knn.k} are used for subsampling procedure when clustering big data. Please consult Nguyen et al. (2021) for details.
 }
 \examples{
 \donttest{
@@ -270,6 +278,8 @@ legend("bottomright", fill = unique(colors),
 2. T Nguyen, R Tagett, D Diaz, S Draghici. A novel method for data integration and disease subtyping. Genome Research, 27(12):2025-2039, 2017.
 
 3. T. Nguyen, "Horizontal and vertical integration of bio-molecular data", PhD thesis, Wayne State University, 2017.
+
+4. H Nguyen, D Tran, B Tran, M Roy, A Cassell, S Dascalu, S Draghici & T Nguyen. SMRT: Randomized Data Transformation for Cancer Subtyping and Big Data Analysis. Frontiers in oncology. 2021.
 }
 \seealso{
 \code{\link{kmeans}}, \code{\link{pam}}

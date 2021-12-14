@@ -17,10 +17,12 @@ GetSimilarityFromGrouping <- function(g) {
 }
 
 CalcClusterAgreement <- function(l) {
-    N <- length(l[[1]])
+    allSamples <- unique(unlist(lapply(l, names)))
+    N <- length(allSamples)
     A <- matrix(0, N, N)
+    colnames(A) <- rownames(A) <- allSamples
     for (group in l) {
-        A <- A + GetSimilarityFromGrouping(group)
+        A[names(group), names(group)] <- A[names(group), names(group)] + GetSimilarityFromGrouping(group)
     }
     A = A / (length(l))
     ret = (sum(A == 0) + sum(A == 1)) / (N ^ 2)

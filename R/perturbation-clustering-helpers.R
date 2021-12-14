@@ -280,3 +280,101 @@ CalcPerturbedDiscrepancy <- function(origS, pertS, clusRange) {
     
     list(Diff = round(diff, digits = 10), Entry = entries, CDF = cdfs, AUC = round(AUC, digits = 10))
 }
+
+
+classifierBig <- function(train, label, test, knn.k){
+    train <- as.data.frame(train)
+    
+    fold <- sample(rep(1:5, ceiling(nrow(train)/5))[1:nrow(train)])
+    
+    if (is.null(knn.k)){
+        minK <- 5
+        maxK <- min(round(nrow(train)/5), 50)
+        
+        errorRate <- colMeans(
+            do.call(
+                what = rbind,
+                args = lapply(1:5, function(foldIter){
+                    nn_index <- FNN::knnx.index(train[fold != foldIter, ], train[fold == foldIter, ], k = maxK)
+                    sapply(minK:maxK, function(k){
+                        predicted <- apply(nn_index[, 1:k], 1, function(index){
+                            tbl <- table(label[fold != foldIter][index])
+                            names(tbl)[which.max(tbl)]
+                        })
+                        
+                        sum(predicted != label[fold == foldIter])/length(predicted)
+                    })
+                })
+            )
+        )
+        
+        minR <- which(errorRate == min(errorRate))
+        bestK <- (minK:maxK)[minR[length(minR)]]
+    } else {
+        bestK <- knn.k
+    }
+    
+    nn_index <- FNN::knnx.index(train, test, k = bestK)
+    
+    res <- t(apply(nn_index, 1, function(indices) {
+        tbl <- table(label[indices])[as.character(unique(label))]/bestK
+        tbl/sum(tbl, na.rm = T)
+    }))
+    
+    res[is.na(res)] <- 0
+    
+    colnames(res) <- unique(label)
+    rownames(res) <- rownames(test)
+    res
+}
+
+classifierSmall <- function(train, label, test){
+    
+    colnames(train) <- colnames(test) <- NULL
+    dat <- as.matrix(rbind(train, test))
+    
+    centers <- as.matrix(
+        do.call(
+            what = rbind,
+            args = lapply(unique(label), function(l){
+                if (sum(label == l) == 1) return(train[label == l,])
+                colMeans(train[label == l,])
+            })
+        )
+    )
+    
+    cluster <- kmeans(dat, centers = centers, iter.max = 1000)$cluster
+    
+    res <- do.call(
+        what = rbind,
+        args = lapply(1:nrow(test), function(i){
+            r <- table(label[cluster[1:nrow(train)] == cluster[nrow(train) + i]])[as.character(unique(label))]/table(label)[as.character(unique(label))]
+            # r/sum(r, na.rm = T)
+        })
+    )
+    
+    res[is.na(res)] <- 0
+    
+    colnames(res) <- unique(label)
+    rownames(res) <- rownames(test)
+    res
+}
+
+classifierProb = function(train, label, test, knn.k){
+    if (nrow(train) > 100){
+        classifierBig(train, label, test, knn.k)
+    } else {
+        classifierSmall(train, label, test)
+    }
+}
+
+classify <- function(train, label, test, knn.k){
+    if (nrow(train) > 100){
+        prob <- classifierBig(train, label, test, knn.k)
+    } else {
+        prob <- classifierSmall(train, label, test)
+    }
+    
+    unlist(apply(prob, 1, function(p) colnames(prob)[which.max(p)]))
+}
+

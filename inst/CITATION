@@ -1,4 +1,15 @@
 bibentry(bibtype = "article",
+         key = "nguyen2017novel",
+         title = "A novel approach for data integration and disease subtyping",
+         author = c(person(given = "Tin", family = "Nguyen"),
+                    person(given = "Rebecca", family = "Tagett"),
+                    person(given = "Diana", family = "Diaz"),
+                    person(given = "Sorin", family = "Draghici")),
+         journal = "Genome Research",
+         year = "2017",
+         date = "2017-10-24")
+
+bibentry(bibtype = "article",
          key = "nguyen2018pinsplus",
          title = "PINSPlus: A tool for tumor subtype discovery in integrated genomic data",
          author = c(person(given = "Hung", family = "Nguyen"),
@@ -8,3 +19,19 @@ bibentry(bibtype = "article",
          journal = "Bioinformatics",
          year = "2018",
          date = "2018-12-24")
+
+bibentry(bibtype = "article",
+         key = "nguyen2021smrt",
+         title = "SMRT: Randomized Data Transformation for Cancer Subtyping and Big Data Analysis",
+         author = c(person(given = "Hung", family = "Nguyen"),
+                    person(given = "Duc", family = "Tran"),
+                    person(given = "Bang", family = "Tran"),
+                    person(given = "Monikrishna", family = "Roy"),
+                    person(given = "Adam", family = "Cassell"),
+                    person(given = "Sergiu", family = "Dascalu"),
+                    person(given = "Sorin", family = "Draghici"),
+                    person(given = "Tin", family = "Nguyen")
+                    ),
+         journal = "Frontiers in oncology",
+         year = "2021",
+         date = "2021-10-20")
