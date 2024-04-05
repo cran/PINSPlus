@@ -6,6 +6,11 @@
 
 using namespace Rcpp;
 
+#ifdef RCPP_USE_GLOBAL_ROSTREAM
+Rcpp::Rostream<true>&  Rcpp::Rcout = Rcpp::Rcpp_cout_get();
+Rcpp::Rostream<false>& Rcpp::Rcerr = Rcpp::Rcpp_cerr_get();
+#endif
+
 // mat_mul_para
 arma::mat mat_mul_para(arma::mat& A, arma::mat& B);
 RcppExport SEXP _PINSPlus_mat_mul_para(SEXP ASEXP, SEXP BSEXP) {
