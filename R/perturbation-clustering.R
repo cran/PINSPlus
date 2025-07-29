@@ -82,7 +82,7 @@
 #' 
 #' 4. H Nguyen, D Tran, B Tran, M Roy, A Cassell, S Dascalu, S Draghici & T Nguyen. SMRT: Randomized Data Transformation for Cancer Subtyping and Big Data Analysis. Frontiers in oncology. 2021.
 #' 
-#' @seealso \code{\link{kmeans}}, \code{\link{pam}}
+#' @seealso \code{\link[stats]{kmeans}}, \code{\link[cluster]{pam}}
 #' 
 #' @examples
 #' \donttest{
