@@ -1,4 +1,4 @@
-42c45a18fed8c11b590e330be10817ec *DESCRIPTION
+bfd1e09329fe016d879f1cbbaaf3d4cf *DESCRIPTION
 e25d62233d4673745639fbb504985357 *NAMESPACE
 779fe8c0e71e08c7ac975f7f4917d613 *R/RcppExports.R
 d6cb326f2f9a33809a9039289717d781 *R/clustering-algorithm-wrappers.R
@@ -16,7 +16,7 @@ cf0d52cafd35cb50a12b46deb24b14df *data/datalist
 a48333ae6c2c9ed11cde44e2dc7bc80f *inst/CITATION
 b23f4280744cce2bbe2e060baa98af73 *inst/doc/PINSPlus.R
 57ea50fe98d11255f913cf985ade4cc8 *inst/doc/PINSPlus.Rmd
-8bc69daa85d8d4b630ac70af593afb56 *inst/doc/PINSPlus.html
+379da00b2d446144894d387e7d32a45d *inst/doc/PINSPlus.html
 10713124632560ffbe71686f29ee8fdf *man/AML2004.Rd
 e80cab6dd6dd53a080a99ffa09935f2c *man/KIRC.Rd
 bc0eb01fa2b7fba7c9da544ee158cf79 *man/PINSPlus-package.Rd
